@@ -2,7 +2,6 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from numpy.random import randn
 
 
@@ -58,7 +57,7 @@ def accuracy(n, y, y_pred):
 
 
 
-file_name = "vec.txt"
+file_name = "embedding.txt"
 
 count = 0
 embedding_matrix = []
@@ -91,12 +90,18 @@ data = data[data.label != "Neutral"]
 Y = pd.get_dummies(data.label).values
 
 X = []
+count = 0
 with open("data.txt") as infile:
   for line in infile:
-    a = line.strip()
-    # print(a)
-    v = list(map(int, a.split(" ")))
-    X.append(v)
+  	if count == 0:
+  		a = line.strip()
+  		shape = list(map(int, a.split(" ")))
+  	else :
+  		a = line.strip()
+  		# print(a)
+  		v = list(map(int, a.split(" ")))
+  		X.append(v)
+  	count = count + 1
 
 X = np.array(X)
 
@@ -156,7 +161,7 @@ class MyRnn():
 
         self.h_last = None
 
-        self.nbr_correct = 0
+        #self.nbr_correct = 0
     
 
 
@@ -197,8 +202,7 @@ class MyRnn():
         dWhx =  np.zeros(self.W_hx.shape)
         dbh =  np.zeros(self.b_h.shape)
 
-        dhnext = np.zeros(self.b_h.shape)
-
+ 
         # dWhh, dWhx, and dbh was computed over time via back propagation through time
 
         dh = np.matmul( dy , self.W_yh.T  )
@@ -227,11 +231,11 @@ class MyRnn():
     
         derived = [dWhx*0.5, dWhh*0.5, dbh*0.5, dWhy*0.5, dby*0.5]
 
-        self.dW_hx = self.dW_hx + dWhx
-        self.dW_hh = self.dW_hh + dWhh
-        self.db_h =  self.db_h  + dbh
-        self.dW_yh = self.dW_yh + dWhy
-        self.db_y =  self.db_y  + dby
+        self.dW_hx = self.dW_hx + dWhx*0.5
+        self.dW_hh = self.dW_hh + dWhh*0.5
+        self.db_h =  self.db_h  + dbh*0.5
+        self.dW_yh = self.dW_yh + dWhy*0.5
+        self.db_y =  self.db_y  + dby*0.5
 
         return loss,  derived
     
@@ -240,7 +244,7 @@ class MyRnn():
     def gradient(self,  n, learning_rate=0.01):
         
         "Update the parameter with SGD"
-        self.W_hx = self.W_hx - learning_rate*self.dW_hx*(1/n)
+        #self.W_hx = self.W_hx - learning_rate*self.dW_hx*(1/n)
         self.W_hh = self.W_hh - learning_rate*self.dW_hh*(1/n)
         self.W_yh = self.W_yh - learning_rate*self.dW_yh*(1/n)
         self.b_h =  self.b_h  - learning_rate*self.db_h*(1/n)
@@ -273,7 +277,7 @@ class MyRnn():
 
 
             
-batches = get_minibatch(X_train[:2000], Y_train[:2000] ,1)           
+batches = get_minibatch(X[:2000], Y[:2000] ,1)           
 print("\n TRAINING PHASE IN PROCESS ... ")
 
 myrnn = MyRnn()
