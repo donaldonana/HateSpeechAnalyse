@@ -9,24 +9,18 @@ typedef struct SimpleRNN SimpleRNN;
 struct SimpleRNN
 {
 	//self.W_hx = randn(embed_dim, hiden_size)/10
-	double **W_hx;
-	double **dW_hx;
+	double **W_hx;  //Matrice de poids entre la couche cachée et la couche d'entrée de taille m × h
 	//self.W_hh = np.identity(hiden_size)
-	double **W_hh;
-	double **dW_hh;
-	//vecteur de poid couche cachée et couche de sortie (neurons X outputs)
-	double *b_h;
-	double *db_h;
+	double **W_hh; //Matrice de poids entre la couche cachée et la couche de contexte de taille h × h
+	//vecteur de poids couche cachée et couche de sortie (neurons X outputs)
+	double *b_h; //le vecteur de biais entre la couche cachée et la couche d’entrée de taille h
     // self.W_yh = randn(hiden_size, output_size)/10
-	double **W_yh;
-	double **dW_yh;
+	double **W_yh;//la matrice de poids entre la couche cachée et la couche de sortie de taille (h × ν)
     // self.b_y = np.zeros((output_size, ))
-	double *b_y;
-	double *db_y;
+	double *b_y;//le vecteur de biais entre la couche cachée et la couche de sortie de taille ν
 
-    double **last_intput;
-	double **last_hs;
-	double *y ;
+	double **last_hs;//l’état de la couche cachée à l’instant t de taille h
+	double *y; //le vecteur finale en sorti de la fonction Sof tM ax taille ν
 	int input_size;
 	int hidden_size;
 	int output_size;
@@ -39,11 +33,9 @@ struct DerivedSimpleRNN
 {
 	double **temp2;
 	double **temp3;
-
 	double **dWhx;
 	double **dWhh;
 	double **WhhT;
-
 	double *dbh;
 	double **dWhy;
 	double **WhyT;
@@ -51,9 +43,6 @@ struct DerivedSimpleRNN
 	double *dhraw;
 	double *temp1;
 	double *dh;
-
-
-
 };
 
 

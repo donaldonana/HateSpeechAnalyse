@@ -40,8 +40,7 @@ int main()
      printf("\n");
      if (datafile != NULL)
      {
-          data = GetData(datafile, drow, dcol);
-
+	data = GetData(datafile, drow, dcol);
      }
 
      FILE *label = NULL;
