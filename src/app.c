@@ -10,9 +10,7 @@
 
 int main()
 {
-
      // srand(time(NULL));
-
 
      int epoch = 20 ;
 
@@ -30,7 +28,6 @@ int main()
           embedding_matrix = GetEmbedding(embedding, row, col);
 
      }
-
 
      FILE *datafile = NULL;
      int drow, dcol;
@@ -60,11 +57,6 @@ int main()
 
      }
 
-
-
-    
-
-    
     SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
 
     int input = 128 , hidden = 64 , output = 2;
@@ -85,16 +77,6 @@ int main()
          printf("  Loss : %lf \n" , loss/2000);
          
     }
-
-
-
-
-
-    
-
-    
-
-
 
 deallocate_dynamic_float_matrix(embedding_matrix, row);
 deallocate_dynamic_int_matrix(data, drow);

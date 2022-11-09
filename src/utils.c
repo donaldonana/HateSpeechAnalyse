@@ -52,8 +52,6 @@ void forward(SimpleRNN *rnn, int *x, int n, double **embedding_matrix){
 	free(temp1);
 	free(temp2);
 	free(temp3);
-	
-		
 }
 
 
@@ -117,26 +115,16 @@ void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matr
 	//  dh = np.matmul( dhraw, self.W_hh.T )
 		trans_mat(whhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
 		mat_mul(dh , dhraw, whhT,  rnn->hidden_size, rnn->hidden_size);
-
-
- 
 		
 	}
-
-
-
 
 
 	minus_matrix(rnn->W_yh ,rnn->W_yh, dWhy , rnn->hidden_size, rnn->output_size);
 	minus_matrix(rnn->W_hh ,rnn->W_hh, dWhh , rnn->hidden_size, rnn->hidden_size);
 	minus_matrix(rnn->W_hx ,rnn->W_hx, dWhx , rnn->input_size, rnn->hidden_size);
 
-
 	minus_vect(rnn->b_y, rnn->b_y, dby, rnn->output_size);
 	minus_vect(rnn->b_h ,rnn->b_h, dbh , rnn->hidden_size);
-
-
-
 
     // free all the allocate memory
 	free(dby);
@@ -153,7 +141,6 @@ void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matr
 	deallocate_dynamic_float_matrix(whhT, rnn->hidden_size); 
 
 	deallocate_dynamic_float_matrix(dWhx, rnn->input_size );      
-
 }
 
 
@@ -170,7 +157,6 @@ void mat_mul(double *r, double* a, double** b, int n, int p) {
         for (k = 0; k < n; k++)
             r[j] += (a[k] * b[k][j]);
     }
-
 	
 }
 
@@ -180,8 +166,6 @@ void add_vect(double *r , double *a, double *b, int n)
 	{
 		r[i] = a[i] + b[i] ;
 	}
-
-	
 }
 
 
@@ -197,15 +181,12 @@ void copy_vect(double *a, double *b , int n)
 void tan_h(double *r , int n, double* input) {
     //output[0] = 1; // Bias term
 
-
     int i;
     for (i = 0; i < n; i++) 
 	{
         r[i] = tanh(input[i]); // tanh function
 
 	}
-
-	
 }
 
 
@@ -224,14 +205,12 @@ double **GetEmbedding(FILE *fin, int row, int col) {
             all_vect[i][j] = myvariable;
             // printf("%.6f " , myvariable);
         }
-
         
     }
 
     fclose(fin);
 
     return all_vect;
-     
 }
 
 
@@ -250,13 +229,11 @@ int **GetData(FILE *fin, int row, int col) {
             // printf("%.6f " , myvariable);
         }
 
-        
     }
 
     fclose(fin);
 
     return all_vect;
-     
 }
 
 int load_target(FILE *stream, int *target )
@@ -275,8 +252,6 @@ int load_target(FILE *stream, int *target )
 	return 0;
     
 }
-
-
 
 
 double **allocate_dynamic_float_matrix(int row, int col)
@@ -331,8 +306,6 @@ int **allocate_dynamic_int_matrix(int row, int col)
 }
 
 
-
-
 void deallocate_dynamic_float_matrix(double **matrix, int row)
 {
     int i;
@@ -356,7 +329,6 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
 		matrix[i] = NULL;
     }
     //free(matrix);
-
 }
 
 void softmax(double *r, int n, double* input) {
@@ -469,7 +441,6 @@ void ToEyeMatrix(double **A, int row, int col) {
 }   
 
 
-
 void display_matrix(double **a, int row, int col)
 {
 	printf("\n row = %d \t col = %d \n", row, col);
@@ -538,9 +509,7 @@ void minus_matrix(double **r, double **a , double **b, int row, int col)
 		{
 			r[i][j] = a[i][j] - (0.01)*b[i][j]*(0.5);
 			//r[i][j] = 0.0; 
-
 		}
-		
 	}
 
 }
@@ -602,8 +571,6 @@ void hadamar_vect(double *r, double *a, double *b, int n)
 
 void add_matrix(double **r, double **a , double **b, int row, int col)
 {
-
-	
 
 	for (int i = 0; i < row; i++)
 	{
