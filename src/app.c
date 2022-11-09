@@ -10,9 +10,12 @@
 
 int main()
 {
+<<<<<<< HEAD
 
      srand(time(NULL));
-
+=======
+     // srand(time(NULL));
+>>>>>>> abc5adbfcb7e11c8f81e642e37090b92049fdc4f
 
      int epoch = 20 ;
 
@@ -31,7 +34,6 @@ int main()
 
      }
 
-
      FILE *datafile = NULL;
      int drow, dcol;
      int **data;
@@ -43,8 +45,7 @@ int main()
      printf("\n");
      if (datafile != NULL)
      {
-          data = GetData(datafile, drow, dcol);
-
+	data = GetData(datafile, drow, dcol);
      }
 
      FILE *label = NULL;
@@ -60,11 +61,6 @@ int main()
 
      }
 
-
-
-    
-
-    
     SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
     DerivedSimpleRNN *drnn = malloc(sizeof(DerivedSimpleRNN));
 
@@ -87,16 +83,6 @@ int main()
          printf("  Loss : %lf \n" , loss/2000);
          
     }
-
-
-
-
-
-    
-
-    
-
-
 
 deallocate_dynamic_float_matrix(embedding_matrix, row);
 deallocate_dynamic_int_matrix(data, drow);
