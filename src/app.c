@@ -6,12 +6,12 @@
 #include <string.h>
 #include <pthread.h>
 
-
+// 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
 
 int main()
 {
 
-     // srand(time(NULL));
+     srand(time(NULL));
 
 
      int epoch = 20 ;
