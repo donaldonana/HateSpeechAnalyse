@@ -244,7 +244,7 @@ class MyRnn():
     def gradient(self,  n, learning_rate=0.01):
         
         "Update the parameter with SGD"
-        #self.W_hx = self.W_hx - learning_rate*self.dW_hx*(1/n)
+        self.W_hx = self.W_hx - learning_rate*self.dW_hx*(1/n)
         self.W_hh = self.W_hh - learning_rate*self.dW_hh*(1/n)
         self.W_yh = self.W_yh - learning_rate*self.dW_yh*(1/n)
         self.b_h =  self.b_h  - learning_rate*self.db_h*(1/n)

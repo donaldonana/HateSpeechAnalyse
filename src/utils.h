@@ -33,6 +33,30 @@ struct SimpleRNN
 };
 
 
+
+typedef struct DerivedSimpleRNN DerivedSimpleRNN;
+struct DerivedSimpleRNN
+{
+	double **temp2;
+	double **temp3;
+
+	double **dWhx;
+	double **dWhh;
+	double **WhhT;
+
+	double *dbh;
+	double **dWhy;
+	double **WhyT;
+	double *dby;
+	double *dhraw;
+	double *temp1;
+	double *dh;
+
+
+
+};
+
+
 double drand();
 
 double random_normal() ;
@@ -78,7 +102,8 @@ void tan_h(double *r , int n, double* input) ;
 
 int load_target(FILE *stream, int *target );
 
-void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matrix);
+void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matrix, 
+DerivedSimpleRNN *drnn);
 
 
 void vect_mult(double **r, double *a , double *b, int n , int m);
@@ -96,5 +121,9 @@ void one_minus_vect(double *r, double *a , int n);
 void hadamar_vect(double *r, double *a, double *b, int n);
 
 void add_matrix(double **r, double **a , double **b, int row, int col);
+
+void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
+
+void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 #endif

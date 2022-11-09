@@ -56,91 +56,97 @@ void forward(SimpleRNN *rnn, int *x, int n, double **embedding_matrix){
 
 
 
-void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matrix)
+void backforward(SimpleRNN *rnn, int n, int idx, int *x, double **embedding_matrix, 
+DerivedSimpleRNN *drnn)
 {
 
-    double *temp1 = malloc(sizeof(double)*rnn->hidden_size);
-	double *dhraw = malloc(sizeof(double)*rnn->hidden_size);
-    double **temp3 = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	double **temp4 = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
  
-	double *dby = malloc(sizeof(double)*rnn->output_size);
-    copy_vect(dby, rnn->y, rnn->output_size);
-    dby[idx] = dby[idx] - 1;
+    copy_vect(drnn->dby, rnn->y, rnn->output_size);
+    drnn->dby[idx] = drnn->dby[idx] - 1;
 
-    double **dWhy = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
-	vect_mult(dWhy, dby, rnn->last_hs[n],  rnn->hidden_size, rnn->output_size);
+	vect_mult(drnn->dWhy, drnn->dby, rnn->last_hs[n],  rnn->hidden_size, rnn->output_size);
 
-    // Initialize dWhh,dWhx, and dbh to zero.
-	double **dWhh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	initialize_mat_zero(dWhh, rnn->hidden_size, rnn->hidden_size);
-	double **dWhx = allocate_dynamic_float_matrix( rnn->input_size , rnn->hidden_size);
-	initialize_mat_zero(dWhx, rnn->input_size , rnn->hidden_size);
-	double *dbh = malloc(sizeof(double)*rnn->hidden_size);
-	initialize_vect_zero(dbh, rnn->hidden_size);
+    // // Initialize dWhh,dWhx, and dbh to zero.
+	initialize_mat_zero(drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
+	initialize_mat_zero(drnn->dWhx, rnn->input_size , rnn->hidden_size);
+	initialize_vect_zero(drnn->dbh, rnn->hidden_size);
 
-	double *dh = malloc(sizeof(double)*rnn->hidden_size);
-	double **whyT = allocate_dynamic_float_matrix(rnn->output_size, rnn->hidden_size);
-	trans_mat(whyT, rnn->W_yh, rnn->hidden_size,  rnn->output_size);
+	trans_mat(drnn->WhyT, rnn->W_yh, rnn->hidden_size,  rnn->output_size);
 
-
-	mat_mul(dh , dby, whyT,  rnn->output_size, rnn->hidden_size);
-
-	double **whhT = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-
-
+	mat_mul(drnn->dh , drnn->dby, drnn->WhyT,  rnn->output_size, rnn->hidden_size);
 
 
     
 	int idn;
 	for (int t = n-1; t >= 0; t--)
 	{
-		vect_pow_2(temp1, rnn->last_hs[t+1], rnn->hidden_size);
-		one_minus_vect(temp1, temp1, rnn->hidden_size);
-		hadamar_vect(dhraw, dh, temp1, rnn->hidden_size);
+		vect_pow_2(drnn->temp1, rnn->last_hs[t+1], rnn->hidden_size);
+		one_minus_vect(drnn->temp1, drnn->temp1, rnn->hidden_size);
+		hadamar_vect(drnn->dhraw, drnn->dh, drnn->temp1, rnn->hidden_size);
 
         // dbh += dhraw
-		add_vect(dbh, dbh, dhraw, rnn->hidden_size);
+		add_vect(drnn->dbh, drnn->dbh, drnn->dhraw, rnn->hidden_size);
 
 	    // dWhh += np.dot(dhraw, hs[t-1].T)
-		vect_mult(temp3, dhraw, rnn->last_hs[t], rnn->hidden_size, rnn->hidden_size);
-		add_matrix(dWhh , dWhh, temp3 , rnn->hidden_size, rnn->hidden_size);
+		vect_mult(drnn->temp2 , drnn->dhraw, rnn->last_hs[t], rnn->hidden_size, rnn->hidden_size);
+		add_matrix(drnn->dWhh , drnn->dWhh, drnn->temp2 , rnn->hidden_size, rnn->hidden_size);
 
 		// dWxh += np.dot(dhraw, xs[t].T)
 		idn = x[t];
-		vect_mult(temp4, dhraw, embedding_matrix[idn], rnn->input_size, rnn->hidden_size );
-		add_matrix(dWhx , dWhx, temp4, rnn->input_size, rnn->hidden_size);
-
+		vect_mult(drnn->temp3, drnn->dhraw, embedding_matrix[idn], rnn->input_size, rnn->hidden_size );
+		add_matrix(drnn->dWhx , drnn->dWhx, drnn->temp3, rnn->input_size, rnn->hidden_size);
 
 	//  dh = np.matmul( dhraw, self.W_hh.T )
+<<<<<<< HEAD
 		trans_mat(whhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
 		mat_mul(dh , dhraw, whhT,  rnn->hidden_size, rnn->hidden_size);
+=======
+		trans_mat(drnn->WhhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
+		mat_mul(drnn->dh , drnn->dhraw, drnn->WhhT, rnn->hidden_size, rnn->hidden_size);
+>>>>>>> 1780e65a0c700b04eaf6d5aea7fd42f3f43f1e26
 		
 	}
 
 
+<<<<<<< HEAD
 	minus_matrix(rnn->W_yh ,rnn->W_yh, dWhy , rnn->hidden_size, rnn->output_size);
 	minus_matrix(rnn->W_hh ,rnn->W_hh, dWhh , rnn->hidden_size, rnn->hidden_size);
 	minus_matrix(rnn->W_hx ,rnn->W_hx, dWhx , rnn->input_size, rnn->hidden_size);
 
 	minus_vect(rnn->b_y, rnn->b_y, dby, rnn->output_size);
 	minus_vect(rnn->b_h ,rnn->b_h, dbh , rnn->hidden_size);
+=======
+
+
+
+	minus_matrix(rnn->W_yh ,rnn->W_yh, drnn->dWhy , rnn->hidden_size, rnn->output_size);
+	minus_matrix(rnn->W_hh ,rnn->W_hh, drnn->dWhh , rnn->hidden_size, rnn->hidden_size);
+	minus_matrix(rnn->W_hx ,rnn->W_hx, drnn->dWhx , rnn->input_size, rnn->hidden_size);
+
+
+	minus_vect(rnn->b_y, rnn->b_y, drnn->dby, rnn->output_size);
+	minus_vect(rnn->b_h ,rnn->b_h, drnn->dbh , rnn->hidden_size);
+>>>>>>> 1780e65a0c700b04eaf6d5aea7fd42f3f43f1e26
 
     // free all the allocate memory
-	free(dby);
-	free(dbh);
-    free(dh);
-    free(temp1);
-    free(dhraw);
-    free(temp3);
-    free(temp4);
-	deallocate_dynamic_float_matrix(dWhy, rnn->hidden_size);
-	deallocate_dynamic_float_matrix(whyT, rnn->output_size);
+	// free(drnn->dby);
+	// free(drnn->dbh);
+    // free(drnn->dh);
+    // free(drnn->temp1);
+    // free(drnn->dhraw);
+    
+	// deallocate_dynamic_float_matrix(drnn->dWhy, rnn->hidden_size);
+	// deallocate_dynamic_float_matrix(whyT, rnn->output_size);
 
-	deallocate_dynamic_float_matrix(dWhh, rnn->hidden_size); 
-	deallocate_dynamic_float_matrix(whhT, rnn->hidden_size); 
+	// deallocate_dynamic_float_matrix(drnn->dWhh, rnn->hidden_size); 
+	// deallocate_dynamic_float_matrix(whhT, rnn->hidden_size); 
 
+<<<<<<< HEAD
 	deallocate_dynamic_float_matrix(dWhx, rnn->input_size );      
+=======
+	// deallocate_dynamic_float_matrix(drnn->dWhx, rnn->input_size );      
+
+>>>>>>> 1780e65a0c700b04eaf6d5aea7fd42f3f43f1e26
 }
 
 
@@ -315,7 +321,7 @@ void deallocate_dynamic_float_matrix(double **matrix, int row)
         free(matrix[i]);
 		matrix[i] = NULL;
     }
-    //free(matrix);
+    free(matrix);
 }
 
 void deallocate_dynamic_int_matrix(int **matrix, int row)
@@ -328,7 +334,12 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
         free(matrix[i]);
 		matrix[i] = NULL;
     }
+<<<<<<< HEAD
     //free(matrix);
+=======
+    free(matrix);
+
+>>>>>>> 1780e65a0c700b04eaf6d5aea7fd42f3f43f1e26
 }
 
 void softmax(double *r, int n, double* input) {
@@ -388,25 +399,62 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 
 }
 
-void initialize_rnn_derived(SimpleRNN *rnn, int input_size, int hidden_size, int output_size)
+void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
 {
 
-	rnn->dW_hx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
-	randomly_initalialize_mat(rnn->dW_hx, rnn->input_size, rnn->hidden_size);
+	drnn->dWhx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
 
-	rnn->dW_hh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	randomly_initalialize_mat(rnn->dW_hh, rnn->hidden_size, rnn->hidden_size);
-	
-	rnn->dW_yh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
-	randomly_initalialize_mat(rnn->dW_yh, rnn->hidden_size, rnn->output_size);
+	drnn->dWhh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
+	drnn->WhhT = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
 
-	rnn->db_h = malloc(sizeof(double)*rnn->hidden_size);
-	initialize_vect_zero(rnn->db_h, rnn->hidden_size);
-	rnn->db_y = malloc(sizeof(double)*rnn->output_size);
-	initialize_vect_zero(rnn->db_y, rnn->output_size);
+	drnn->dWhy = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
+	drnn->WhyT = allocate_dynamic_float_matrix(rnn->output_size, rnn->hidden_size);
 
+	drnn->dbh = malloc(sizeof(double)*rnn->hidden_size);
+	drnn->dby = malloc(sizeof(double)*rnn->output_size);
+
+    drnn->temp1 = malloc(sizeof(double)*rnn->hidden_size);
+
+	drnn->dhraw = malloc(sizeof(double)*rnn->hidden_size);
+
+    drnn->temp2 = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
+
+	drnn->temp3 = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
+
+	drnn->dh = malloc(sizeof(double)*rnn->hidden_size);
 
 }
+
+
+
+void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
+{
+
+	deallocate_dynamic_float_matrix(drnn->dWhx, rnn->input_size);
+
+	deallocate_dynamic_float_matrix(drnn->dWhh , rnn->hidden_size);
+	deallocate_dynamic_float_matrix(drnn->WhhT , rnn->hidden_size);
+
+	
+	deallocate_dynamic_float_matrix(drnn->dWhy , rnn->hidden_size);
+	deallocate_dynamic_float_matrix(drnn->WhyT , rnn->output_size);
+
+
+	free(drnn->dbh ) ;
+	free(drnn->dby ) ;
+
+    free(drnn->temp1 ) ;
+
+	free(drnn->dhraw ) ;
+
+    deallocate_dynamic_float_matrix(drnn->temp2 , rnn->hidden_size);
+
+	deallocate_dynamic_float_matrix(drnn->temp3 , rnn->hidden_size);
+
+	free(drnn->dh) ;
+
+}
+
 
 void randomly_initalialize_mat(double **a, int row, int col)
 {
