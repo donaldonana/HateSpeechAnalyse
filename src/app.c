@@ -66,9 +66,11 @@ int main()
 
     
     SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
+    DerivedSimpleRNN *drnn = malloc(sizeof(DerivedSimpleRNN));
 
     int input = 128 , hidden = 64 , output = 2;
     initialize_rnn(rnn, input, hidden, output);
+    initialize_rnn_derived(rnn , drnn);
     ToEyeMatrix(rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
 
 
@@ -79,7 +81,7 @@ int main()
          for (int i = 0; i < 2000; i++)
          {
               forward(rnn, data[i], dcol , embedding_matrix);
-              backforward(rnn, dcol, target[i], data[i], embedding_matrix);
+              backforward(rnn, dcol, target[i], data[i], embedding_matrix, drnn);
               loss = loss + binary_loss_entropy(target[i], rnn->y);
          }
          printf("  Loss : %lf \n" , loss/2000);
