@@ -10,18 +10,13 @@
 
 int main()
 {
-<<<<<<< HEAD
-
      srand(time(NULL));
-=======
-     // srand(time(NULL));
->>>>>>> abc5adbfcb7e11c8f81e642e37090b92049fdc4f
 
-     int epoch = 20 ;
+     int epoch = 50 ;
 
      FILE *embedding = NULL;
      int row, col;
-     double **embedding_matrix;
+     float **embedding_matrix;
      embedding = fopen("python/embedding.txt" , "r");
      fscanf(embedding, "%d" , &row);
      printf("%d " , row);
@@ -68,19 +63,20 @@ int main()
     initialize_rnn(rnn, input, hidden, output);
     initialize_rnn_derived(rnn , drnn);
     ToEyeMatrix(rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+    int i ;
 
 
     for (int e = 0; e < epoch ; e++)
     {
-         double loss = 0.0;
+         float loss = 0.0;
          printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-         for (int i = 0; i < 2000; i++)
+         for ( i = 0; i < 2000; i++)
          {
               forward(rnn, data[i], dcol , embedding_matrix);
               backforward(rnn, dcol, target[i], data[i], embedding_matrix, drnn);
               loss = loss + binary_loss_entropy(target[i], rnn->y);
          }
-         printf("  Loss : %lf \n" , loss/2000);
+         printf("  Loss : %f \n" , loss/2000);
          
     }
 

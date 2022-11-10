@@ -1,4 +1,4 @@
-CFLAGS= -g3 -c -Wall
+CFLAGS= -O3 -g3 -c -Wall
 CC= gcc
 SRC = src
 LIB = lib
