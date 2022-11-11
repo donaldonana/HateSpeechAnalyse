@@ -57,10 +57,9 @@ float drand();
 
 float random_normal() ;
 
+float **GetEmbedding(int *dim)  ;
 
-float **GetEmbedding(FILE *fin, int row, int col) ;
-
-int **GetData(FILE *fin, int row, int col) ;
+int **GetData(int *dim) ; 
 
 float **allocate_dynamic_float_matrix(int row, int col);
 
@@ -98,7 +97,7 @@ void copy_vect(float *a, float *b , int n);
 
 void tan_h(float *r , int n, float* input) ;
 
-int load_target(FILE *stream, int *target );
+int *load_target(int *target );
 
 void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, 
 DerivedSimpleRNN *drnn);

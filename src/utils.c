@@ -170,66 +170,105 @@ void tan_h(float *r , int n, float* input) {
 
 
 
-float **GetEmbedding(FILE *fin, int row, int col) {
+float **GetEmbedding(int *dim) {
 
     float myvariable;
+	int row, col;
     int i, j ;
-    float **all_vect = allocate_dynamic_float_matrix(row, col);
-
-    for ( i = 0; i < row; i++)
+    FILE *fin = NULL;
+    fin = fopen("python/embedding.txt" , "r");
+    if(fscanf(fin, "%d" , &row)){printf("%d " , row);}
+    if( fscanf(fin, "%d" , &col)){printf("%d " , col); }
+    float **embedding_matrix = allocate_dynamic_float_matrix(row, col);
+    printf("\n");
+    if (fin != NULL)
     {
-        for ( j = 0; j < col; j++)
-        {
-            fscanf(fin, "%f" , &myvariable);
-            all_vect[i][j] = myvariable;
-            // printf("%.6f " , myvariable);
-        }
-        
+		for ( i = 0; i < row; i++)
+		{
+			for ( j = 0; j < col; j++)
+			{
+				if(fscanf(fin, "%f" , &myvariable)){
+				embedding_matrix[i][j] = myvariable;
+				}
+			}
+			
+		}
+		fclose(fin);
+
     }
 
-    fclose(fin);
+	dim[0] = row;
+	dim[1] = col;
 
-    return all_vect;
+
+	return embedding_matrix;
+
+
 }
 
 
-int **GetData(FILE *fin, int row, int col) {
+int **GetData(int *dim) {
 
     int myvariable;
     int i, j ;
-    int **all_vect = allocate_dynamic_int_matrix(row, col);
-
-    for ( i = 0; i < row; i++)
+	int row, col;
+    FILE *fin = NULL;
+    fin = fopen("python/data.txt" , "r");
+    if(fscanf(fin, "%d" , &row)){printf("%d " , row);}
+    if(fscanf(fin, "%d" , &col)){printf("%d " , col); }
+    int **data = allocate_dynamic_int_matrix(row, col);
+    printf("\n");
+    if (fin != NULL)
     {
-        for ( j = 0; j < col; j++)
-        {
-            fscanf(fin, "%d" , &myvariable);
-            all_vect[i][j] = myvariable;
-            // printf("%.6f " , myvariable);
-        }
+		 
+		for ( i = 0; i < row; i++)
+		{
+			for ( j = 0; j < col; j++)
+			{
+				if(fscanf(fin, "%d" , &myvariable)){
+				data[i][j] = myvariable;
+				}
+			}
+
+		}
+
+		fclose(fin);
 
     }
 
-    fclose(fin);
+	dim[0] = row;
+	dim[1] = col;
 
-    return all_vect;
+	return data;
+
 }
 
-int load_target(FILE *stream, int *target )
+int *load_target(int *target )
 {
 
-	int count = 0;
-  	if (stream == NULL) {
+	FILE *stream = NULL;
+    int lrow;
+    stream = fopen("python/label.txt" , "r");
+    if(fscanf(stream, "%d" , &lrow)){printf("%d " , lrow);}
+    target = malloc(sizeof(int)*lrow);
+    printf("\n");
+    if (stream != NULL)
+    {
+        int count = 0;
+  		if (stream == NULL) {
     	fprintf(stderr, "Error reading file\n");
-    	return 1;
-  	}
-  	while (fscanf(stream, "%d", &target[count]) == 1) {
-      count = count+1;
-  	}
+  		}
+  		while (fscanf(stream, "%d", &target[count]) == 1) {
+      	count = count+1;
+  		}
 
-    fclose(stream);
-	return 0;
-    
+    	fclose(stream);
+
+    }
+
+	return target;
+
+	
 }
 
 
@@ -603,3 +642,26 @@ void add_matrix(float **r, float **a , float **b, int row, int col)
 
 	
 }
+
+// double test(double **x, int *y, int start, int end, SimpleRNN *rnn ,
+// double **embedding_matrix, int p ){
+
+// 	double loss ;
+// 	int n = 0;
+
+// 	for (int i = start; i < end; i++)
+// 	{
+// 		forward(rnn, x[i], p, embedding_matrix);
+//         loss = loss + binary_loss_entropy(y[i], rnn->y);
+
+// 		n = n + 1;
+
+// 	}
+
+// 	loss = loss / n ;
+
+// 	return loss ;
+	
+
+
+// }
