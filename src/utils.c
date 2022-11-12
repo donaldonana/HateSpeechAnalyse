@@ -27,24 +27,20 @@ void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 
 	initialize_vect_zero(rnn->h[0], rnn->hidden_size);
 
-	float *temp3 = malloc(sizeof(float)*rnn->hidden_size);
-
-
-	for (int i = 0; i < n; i++)
+	for (int t = 0; t < n; t++)
 	{
-         
-		mat_mul(rnn->temp1 , embedding_matrix[x[i]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
-		mat_mul(rnn->temp2 , rnn->h[i], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
-		add_vect_three(rnn->temp1 ,rnn->temp1, rnn->b_h, rnn->temp2, rnn->hidden_size);
-		tan_h(rnn->h[i+1], rnn->hidden_size, rnn->temp1);
+        // ht =  np.dot(xt, self.W_hx)  +  np.dot(self.h_last, self.W_hh)  + self.b_h  
+		mat_mul(rnn->temp1 , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
+		mat_mul(rnn->temp2 , rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+		add_three_vect(rnn->temp1 ,rnn->temp1, rnn->b_h, rnn->temp2, rnn->hidden_size);
+		// np.tanh(ht)
+		Tanh(rnn->h[t+1], rnn->temp1 , rnn->hidden_size);
 	}
-
-	mat_mul(temp3, rnn->h[n], rnn->W_yh,  rnn->hidden_size, rnn->output_size);
-	add_vect(temp3, temp3, rnn->b_y, rnn->output_size);
-	softmax(rnn->y , rnn->output_size, temp3);
+	// y = np.dot(self.h_last, self.W_yh) + self.b_y
+	mat_mul(rnn->y, rnn->h[n], rnn->W_yh,  rnn->hidden_size, rnn->output_size);
+	add_vect(rnn->y, rnn->y, rnn->b_y, rnn->output_size);
+	softmax(rnn->y , rnn->y , rnn->output_size);
 	
-
-	free(temp3);
 }
 
 
@@ -53,26 +49,28 @@ void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matri
 DerivedSimpleRNN *drnn)
 {
 
- 
+	// dy = y_pred - label
     copy_vect(drnn->dby, rnn->y, rnn->output_size);
     drnn->dby[idx] = drnn->dby[idx] - 1;
 
+	// dWhy = last_h.T * dy 
 	vect_mult(drnn->dWhy , drnn->dby, rnn->h[n],  rnn->hidden_size, rnn->output_size);
 
-    // Initialize dWhh,dWhx, and dbh to zero.
+    // Initialize dWhh, dWhx, and dbh to zero.
 	initialize_mat_zero(drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
 	initialize_mat_zero(drnn->dWhx, rnn->input_size , rnn->hidden_size);
 	initialize_vect_zero(drnn->dbh, rnn->hidden_size);
 
+	// dh = np.matmul( dy , self.W_yh.T  )
 	trans_mat(drnn->WhyT, rnn->W_yh, rnn->hidden_size,  rnn->output_size);
-
 	mat_mul(drnn->dh , drnn->dby, drnn->WhyT,  rnn->output_size, rnn->hidden_size);
 
 
     
 	for (int t = n-1; t >= 0; t--)
 	{     
-		vect_pow_2( drnn->dhraw, rnn->h[t+1] , drnn->dh, rnn->hidden_size);
+		// (1 - np.power( h[t+1], 2 )) * dh   
+		dhraw( drnn->dhraw, rnn->h[t+1] , drnn->dh, rnn->hidden_size);
 
         // dbh += dhraw
 		add_vect(drnn->dbh, drnn->dbh, drnn->dhraw, rnn->hidden_size);
@@ -81,33 +79,25 @@ DerivedSimpleRNN *drnn)
 		vect_mult(drnn->temp2 , drnn->dhraw, rnn->h[t], rnn->hidden_size, rnn->hidden_size);
 		add_matrix(drnn->dWhh , drnn->dWhh, drnn->temp2 , rnn->hidden_size, rnn->hidden_size);
 
-		// dWxh += np.dot(dhraw, xs[t].T)
+		// dWxh += np.dot(dhraw, x[t].T)
 		vect_mult(drnn->temp3, drnn->dhraw, embedding_matrix[x[t]], rnn->input_size, rnn->hidden_size );
 		add_matrix(drnn->dWhx , drnn->dWhx, drnn->temp3, rnn->input_size, rnn->hidden_size);
 
-	//  dh = np.matmul( dhraw, self.W_hh.T )
+		//  dh = np.matmul( dhraw, self.W_hh.T )
 		trans_mat(drnn->WhhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
 		mat_mul(drnn->dh , drnn->dhraw, drnn->WhhT, rnn->hidden_size, rnn->hidden_size);
 		
 	}
 
-
-
-
-
+	// Parameters Update  with SGD  o = o - lr*do
 	minus_matrix(rnn->W_yh ,rnn->W_yh, drnn->dWhy , rnn->hidden_size, rnn->output_size);
 	minus_matrix(rnn->W_hh ,rnn->W_hh, drnn->dWhh , rnn->hidden_size, rnn->hidden_size);
 	minus_matrix(rnn->W_hx ,rnn->W_hx, drnn->dWhx , rnn->input_size, rnn->hidden_size);
-
-
 	minus_vect(rnn->b_y, rnn->b_y, drnn->dby, rnn->output_size);
 	minus_vect(rnn->b_h ,rnn->b_h, drnn->dbh , rnn->hidden_size);
-
-         
-
 }
 
-
+ 
 
 void mat_mul(float *r, float* a, float** b, int n, int p) {
     // matrix a of size 1 x n (array)
@@ -137,7 +127,7 @@ void add_vect(float *r , float *a, float *b, int n)
 	}
 }
 
-void add_vect_three(float *r, float *a, float *b, float *c, int n)
+void add_three_vect(float *r, float *a, float *b, float *c, int n)
 {
 
 	int i ;
@@ -157,7 +147,7 @@ void copy_vect(float *a, float *b , int n)
 	
 }
 
-void tan_h(float *r , int n, float* input) {
+void Tanh(float *r , float* input, int n) {
     //output[0] = 1; // Bias term
 
     int i;
@@ -350,7 +340,7 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
 
 }
 
-void softmax(float *r, int n, float* input) {
+void softmax(float *r, float* input, int n) {
 
     //output[0] = 1; // Bias term
 
@@ -391,7 +381,8 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 	randomly_initalialize_mat(rnn->W_hx, rnn->input_size, rnn->hidden_size);
 
 	rnn->W_hh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	randomly_initalialize_mat(rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+    ToEyeMatrix(rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+
 	
 	rnn->W_yh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
 	randomly_initalialize_mat(rnn->W_yh, rnn->hidden_size, rnn->output_size);
@@ -598,7 +589,7 @@ void trans_mat(float **r, float **a, int row , int col)
 	
 }
 
-void vect_pow_2(float *dhraw, float *lasth, float *dh, int n)
+void dhraw(float *dhraw, float *lasth, float *dh, int n)
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -643,25 +634,24 @@ void add_matrix(float **r, float **a , float **b, int row, int col)
 	
 }
 
-// double test(double **x, int *y, int start, int end, SimpleRNN *rnn ,
-// double **embedding_matrix, int p ){
+float test( SimpleRNN *rnn , int **x, int *y, float **embedding_matrix, 
+int start, int end, int n ) { 
 
-// 	double loss ;
-// 	int n = 0;
+	float loss = 0;
+	int k = 0;
 
-// 	for (int i = start; i < end; i++)
-// 	{
-// 		forward(rnn, x[i], p, embedding_matrix);
-//         loss = loss + binary_loss_entropy(y[i], rnn->y);
+	for (int i = start; i < end; i++)
+	{
+		forward(rnn, x[i], n, embedding_matrix);
+        loss = loss + binary_loss_entropy(y[i], rnn->y);
+		k = k + 1;
 
-// 		n = n + 1;
+	}
 
-// 	}
+	loss = loss / k ;
 
-// 	loss = loss / n ;
-
-// 	return loss ;
+	return loss ;
 	
 
 
-// }
+}
