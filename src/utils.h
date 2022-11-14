@@ -122,7 +122,8 @@ void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
-float test( SimpleRNN *rnn , int **x, int *y, float **embedding_matrix, 
-int start, int end, int n ) ;
+float accuracy(float acc, float y, float *y_pred);
+
+int ArgMax( float *y_pred);
 
 #endif

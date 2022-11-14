@@ -634,24 +634,31 @@ void add_matrix(float **r, float **a , float **b, int row, int col)
 	
 }
 
-float test( SimpleRNN *rnn , int **x, int *y, float **embedding_matrix, 
-int start, int end, int n ) { 
+float accuracy(float acc, float y, float *y_pred) {
 
-	float loss = 0;
-	int k = 0;
+	int idx ;
+	idx = ArgMax(y_pred);
 
-	for (int i = start; i < end; i++)
+	if (idx == y)
 	{
-		forward(rnn, x[i], n, embedding_matrix);
-        loss = loss + binary_loss_entropy(y[i], rnn->y);
-		k = k + 1;
-
+		acc = acc + 1 ;
 	}
 
-	loss = loss / k ;
-
-	return loss ;
+	return acc;
 	
+}
 
+
+int ArgMax( float *y_pred){
+
+	int indMax = 0;
+
+	if (y_pred[1] > y_pred[0])
+	{
+		indMax = 1;
+	}
+
+	return indMax ;
+	
 
 }
