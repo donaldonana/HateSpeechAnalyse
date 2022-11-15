@@ -4,13 +4,16 @@ SRC = src
 LIB = lib
 OBJ = obj
 BIN = bin
-OBJECTS=$(OBJ)/utils.o
-HEADERS= $(SRC)/utils.h  
+OBJECTS = $(OBJ)/utils.o $(OBJ)/simplernn.o
+HEADERS = $(SRC)/utils.h  $(SRC)/simplernn.h
 
 all : app test
 
 $(OBJ)/utils.o: $(SRC)/utils.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/utils.c  -o  $(OBJ)/utils.o -lm
+
+$(OBJ)/simplernn.o: $(SRC)/simplernn.c $(HEADERS)
+	$(CC) $(CFLAGS) $(SRC)/simplernn.c  -o  $(OBJ)/simplernn.o -lm
 
 $(OBJ)/app.o: $(SRC)/app.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/app.c  -o $(OBJ)/app.o -lm

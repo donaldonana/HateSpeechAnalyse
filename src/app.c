@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "utils.h"
+#include "simplernn.h"
 #include <time.h>
 #include <string.h>
 #include <pthread.h>
@@ -73,6 +74,11 @@ int main()
     printf("\nTRAINING PHASE END IN %lf s\n" , time);
     printf("\n BEST LOST IS %lf : \n" , best_lost);
 
+    // **************************** MODEL SAVE WITH THE BEST LOSS *****************************
+
+    printf("\n ************************ MODEL SAVE PHASE START ************************ \n");
+
+
     // **************************** TEST MODEL PHASE *****************************
 
     printf("\n ************************ TEST PHASE START ************************ \n");
@@ -91,9 +97,6 @@ int main()
     printf("\n TEST LOST IS %lf : \n" , Loss);
 
 
-    // **************************** MODEL SAVE WITH THE BEST LOSS *****************************
-
-    printf("\n ************************ MODEL SAVE PHASE START ************************ \n");
 
 
 
