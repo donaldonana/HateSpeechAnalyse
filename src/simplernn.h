@@ -22,10 +22,7 @@ struct SimpleRNN
 	float *b_y;//le vecteur de biais entre la couche cachée et la couche de sortie de taille ν
 	float **h;//l’état de la couche cachée à l’instant t de taille h
 	float *y; //le vecteur finale en sorti de la fonction Sof tM ax taille ν
-
-	float *temp1;
-	float *temp2;
-	
+ 
 	
 };
 

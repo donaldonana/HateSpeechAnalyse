@@ -411,6 +411,7 @@ float **GetEmbedding(int *dim) {
 	return embedding_matrix;
 
 
+
 }
 
 

@@ -14,20 +14,27 @@
 void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 
 	initialize_vect_zero(rnn->h[0], rnn->hidden_size);
+    float *h1 = malloc(sizeof(float)*rnn->hidden_size);
+    float *h2 = malloc(sizeof(float)*rnn->hidden_size);
+
 
 	for (int t = 0; t < n; t++)
 	{
         // ht =  np.dot(xt, self.W_hx)  +  np.dot(self.h_last, self.W_hh)  + self.b_h  
-		mat_mul(rnn->temp1 , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
-		mat_mul(rnn->temp2 , rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
-		add_three_vect(rnn->temp1 ,rnn->temp1, rnn->b_h, rnn->temp2, rnn->hidden_size);
+		mat_mul(h1 , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
+		mat_mul(h2, rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+		add_three_vect(rnn->h[t+1] , h1 , rnn->b_h, h2, rnn->hidden_size);
 		// np.tanh(ht)
-		Tanh(rnn->h[t+1], rnn->temp1 , rnn->hidden_size);
+		Tanh(rnn->h[t+1], rnn->h[t+1] , rnn->hidden_size);
 	}
 	// y = np.dot(self.h_last, self.W_yh) + self.b_y
 	mat_mul(rnn->y, rnn->h[n], rnn->W_yh,  rnn->hidden_size, rnn->output_size);
 	add_vect(rnn->y, rnn->y, rnn->b_y, rnn->output_size);
 	softmax(rnn->y , rnn->y , rnn->output_size);
+
+
+    free(h1);
+    free(h2);
 	
 }
 
@@ -150,8 +157,6 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 	initialize_vect_zero(rnn->b_y, rnn->output_size);
 	rnn->y = malloc(sizeof(float)*rnn->output_size);
 	rnn->h = allocate_dynamic_float_matrix(100, rnn->hidden_size);
-	rnn->temp2 = malloc(sizeof(float)*rnn->hidden_size);
-	rnn->temp1 = malloc(sizeof(float)*rnn->hidden_size);
 
 }
 
