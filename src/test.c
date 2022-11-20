@@ -9,7 +9,7 @@
 int main()
 {
 
-    // double label[2] = {0,1};
+    // float label[4] = {0,1,0.3,0.56};
     // double y_pred[2] = {0.60,0.40};
 
     // double loss = binary_loss_entropy(label, y_pred, 2);
@@ -25,16 +25,17 @@ int main()
     // display_matrix(rnn->W_yh, hidden, output);
 
 
-    int total = 41255;
+    // int total = 41255;
 
-    int train ;
+    // int train ;
 
-    int test;
+    // int test;
 
-    train = (int) total * 0.7 ; 
+    // train = (int) total * 0.7 ; 
 
-    printf("\n train , from 0 to %d \n" , train);
-    printf("\n test ,  from %d to %d \n" , train+1 , total);
+    // printf("\n train , from 0 to %d \n" , train);
+    // printf("\n test ,  from %d to %d \n" , train+1 , total);
+ 
 
     
     return 0 ;

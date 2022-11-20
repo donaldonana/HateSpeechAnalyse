@@ -242,8 +242,6 @@ void trans_mat(float **r, float **a, int row , int col)
 }
 
  
- 
-
 void add_matrix(float **r, float **a , float **b, int row, int col)
 {
 	for (int i = 0; i < row; i++)
@@ -256,7 +254,6 @@ void add_matrix(float **r, float **a , float **b, int row, int col)
 	}
 	
 }
-
 
 int ArgMax( float *y_pred){
 
@@ -275,9 +272,7 @@ void vector_store_as_json(float *v, int n, FILE *fo){
 
 	if ( fo == NULL )
     return;	
-
 	fprintf(fo, "[");
-
 	for (int i = 0; i < n; i++)
 	{
 		if (i != (n-1))
@@ -285,12 +280,45 @@ void vector_store_as_json(float *v, int n, FILE *fo){
 			fprintf(fo,"%.15f,", v[i]);	 
 		}
 		else{
-
-			fprintf(fo,"%.15f,", v[i]);	 
+			fprintf(fo,"%.15f", v[i]);	 
 		}
 	
 	}
+	fprintf(fo, "]");
+}
 
+void matrix_strore_as_json(float **m, int row, int col, FILE *fo){
+
+	fprintf(fo, "[");
+
+	for (int i = 0; i < row; i++)
+	{
+		fprintf(fo, "[");
+
+		for (int j = 0; j < col; j++)
+		{
+			if (j != (col - 1))
+			{
+				fprintf(fo,"%.15f,", m[i][j]);	 
+			}
+			else{
+			fprintf(fo,"%.15f", m[i][j]);	 
+			}
+			
+		}
+		
+		if (i != (row - 1))
+		{
+			fprintf(fo, "],");
+ 
+		}
+		else{
+			fprintf(fo, "]");
+	 
+		}
+
+	}
+	
 	fprintf(fo, "]");
 
 }
@@ -347,6 +375,28 @@ int **allocate_dynamic_int_matrix(int row, int col)
     return ret_val;
 }
 
+void data_for_plot(char *filename, int epoch, float *axis, char *axis_name){
+
+ 	FILE* fichier = NULL;
+	fichier = fopen(filename, "w");
+	if (fichier != NULL)
+	{
+ 		// printf("%s", filename);
+		fprintf(fichier,"epoch,%s\n", axis_name);
+
+		for (int k = 0; k < epoch; k++)
+		{
+			fprintf(fichier,"%d,%f\n", (k+1), axis[k]);
+
+		}
+	}
+	else
+	{
+		// On affiche un message d'erreur si on veut
+		printf("Impossible d'ouvrir le fichier test.txt");
+	}
+}
+
 
 void deallocate_dynamic_float_matrix(float **matrix, int row)
 {
@@ -373,8 +423,6 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
     free(matrix);
 
 }
-
-
 
 
 float **GetEmbedding(int *dim) {

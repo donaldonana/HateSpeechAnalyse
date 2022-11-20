@@ -64,11 +64,14 @@ void trans_mat(float **r, float **a, int row , int col);
 
 
 
+void data_for_plot(char *filename, int epoch, float *axis, char *axis_name);
+
 
 void add_matrix(float **r, float **a , float **b, int row, int col);
 
 void vector_store_as_json(float *r, int n, FILE *fo);
 
+void matrix_strore_as_json(float **m, int row, int col, FILE *fo);
 
 float **GetEmbedding(int *dim)  ;
 

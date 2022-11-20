@@ -6,7 +6,6 @@
 typedef struct SimpleRNN SimpleRNN;
 struct SimpleRNN
 {
-
 	int input_size;
 	int hidden_size;
 	int output_size;
@@ -21,17 +20,13 @@ struct SimpleRNN
     // self.b_y = np.zeros((output_size, ))
 	float *b_y;//le vecteur de biais entre la couche cachée et la couche de sortie de taille ν
 	float **h;//l’état de la couche cachée à l’instant t de taille h
-	float *y; //le vecteur finale en sorti de la fonction Sof tM ax taille ν
- 
-	
+	float *y; //le vecteur finale en sorti de la fonction Sof tM ax taille ν	
 };
 
 
 typedef struct DerivedSimpleRNN DerivedSimpleRNN;
 struct DerivedSimpleRNN
 {
-	float **temp2;
-	float **temp3;
 	float **dWhx;
 	float **dWhh;
 	float **WhhT;
@@ -40,11 +35,16 @@ struct DerivedSimpleRNN
 	float **WhyT;
 	float *dby;
 	float *dhraw;
-	float *temp1;
 	float *dh;
+	float **temp2;
+	float **temp3;
 };
 
 
+void training(int epoch, int **data, int *datadim, float **embedding_matrix, int *target,
+SimpleRNN *rnn, DerivedSimpleRNN *drnn, int index) ;
+
+void testing(SimpleRNN *rnn, int **data, int *datadim, float **embedding_matrix, int index, int *target);
 
 void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix);
 
@@ -61,5 +61,6 @@ void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
+void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
 
 #endif
