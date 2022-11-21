@@ -2,6 +2,24 @@
 #ifndef DEF_SIMPLERNN
 #define DEF_SIMPLERNN
 
+#include "utils.h"
+
+
+typedef struct Data Data;
+struct Data
+{
+	int xraw;
+	int xcol;
+	int ecol;
+    int eraw;
+	int **X;
+    int *Y;
+    float **embedding;
+};
+
+
+
+
 
 typedef struct SimpleRNN SimpleRNN;
 struct SimpleRNN
@@ -41,8 +59,7 @@ struct DerivedSimpleRNN
 };
 
 
-void training(int epoch, int **data, int *datadim, float **embedding_matrix, int *target,
-SimpleRNN *rnn, DerivedSimpleRNN *drnn, int index) ;
+void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int index) ;
 
 void testing(SimpleRNN *rnn, int **data, int *datadim, float **embedding_matrix, int index, int *target);
 
@@ -62,5 +79,8 @@ void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
+
+void get_data(Data *data);
+
 
 #endif

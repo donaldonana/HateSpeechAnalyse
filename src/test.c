@@ -16,27 +16,26 @@ int main()
 
     // printf("%lf", loss);
 
-    // SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
+    // Data *data = malloc(sizeof(Data));
+    // get_data(data);
 
-    // int input = 128 , hidden = 64 , output = 2;
-    //printf("///%d////", intputs);
-    // initialize_rnn(rnn, input, hidden, output);
-    // ToEyeMatrix(rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
-    // display_matrix(rnn->W_yh, hidden, output);
+    float val = 0.731; 
+    float val2 = 0.729; 
 
 
-    // int total = 41255;
+    float rounded_down = rounded_float(val); 
 
-    // int train ;
+    float rounded_down2 = rounded_float(val2); 
 
-    // int test;
+    if (rounded_down > rounded_down2 )
+    {
+        printf("BONJOUR DONALD \n");
+    }
+    
 
-    // train = (int) total * 0.7 ; 
 
-    // printf("\n train , from 0 to %d \n" , train);
-    // printf("\n test ,  from %d to %d \n" , train+1 , total);
+
  
-
     
     return 0 ;
 }

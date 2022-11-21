@@ -13,20 +13,10 @@
 int main()
 {
   srand(time(NULL));
-  printf("\n ***************** IMPORT PHASE START *****************\n");
-  float **embedding_matrix = NULL;
-  int **data = NULL;
-  int *target = NULL;
-  int train ;
-  int datadim[2];
-  int embeddim[2];
-  data = GetData(datadim );
-  embedding_matrix = GetEmbedding(embeddim);
-  target = load_target(target);
-  train = (int) datadim[0] * 0.7 ; 
-  printf("\n train , from 0 to %d \n" , train);
-  printf("\n test ,  from %d to %d \n" , train+1 , datadim[0]-1);
 
+  printf("\n ***************** IMPORT PHASE START *****************\n");
+  Data *data = malloc(sizeof(Data));
+  get_data(data);
 
   //  **************** INITIALIZE THE RNN PHASE*****************
   SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
@@ -36,16 +26,10 @@ int main()
   initialize_rnn_derived(rnn , drnn);
 
   printf("\n ****************** TRAINING PHASE START ****************\n");
-  training(40, data, datadim, embedding_matrix, target, rnn, drnn, 2000) ;
+  training(10, rnn, drnn, data, 1000) ;
 
-  printf("\n ******************* TEST PHASE START *******************\n");
-  testing(rnn, data, datadim, embedding_matrix, train, target);
-
-  //************************ FREE MEMORY PHASE **********************
-  deallocate_dynamic_float_matrix(embedding_matrix, embeddim[0]);
-  deallocate_dynamic_int_matrix(data, datadim[0]);
-  free(target);
-
+  // printf("\n ******************* TEST PHASE START *******************\n");
+  // testing(rnn, data, datadim, embedding_matrix, train, target);
 
   return 0 ;
 }

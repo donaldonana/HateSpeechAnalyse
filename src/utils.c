@@ -26,6 +26,12 @@ float random_normal()
   return sqrt(-2*log(drand())) * cos(2*M_PI*drand());
 }
 
+float rounded_float(float val){
+
+	return (floorf(val * 100) / 100 );
+
+}
+
 
 void mat_mul(float *r, float* a, float** b, int n, int p) {
     // matrix a of size 1 x n (array)
@@ -85,7 +91,6 @@ void Tanh(float *r , float* input, int n) {
 
 	}
 }
-
 
 
 void softmax(float *r, float* input, int n) {
@@ -375,28 +380,6 @@ int **allocate_dynamic_int_matrix(int row, int col)
     return ret_val;
 }
 
-void data_for_plot(char *filename, int epoch, float *axis, char *axis_name){
-
- 	FILE* fichier = NULL;
-	fichier = fopen(filename, "w");
-	if (fichier != NULL)
-	{
- 		// printf("%s", filename);
-		fprintf(fichier,"epoch,%s\n", axis_name);
-
-		for (int k = 0; k < epoch; k++)
-		{
-			fprintf(fichier,"%d,%f\n", (k+1), axis[k]);
-
-		}
-	}
-	else
-	{
-		// On affiche un message d'erreur si on veut
-		printf("Impossible d'ouvrir le fichier test.txt");
-	}
-}
-
 
 void deallocate_dynamic_float_matrix(float **matrix, int row)
 {
@@ -425,105 +408,26 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
 }
 
 
-float **GetEmbedding(int *dim) {
+void data_for_plot(char *filename, int epoch, float *axis, char *axis_name){
 
-    float myvariable;
-	int row, col;
-    int i, j ;
-    FILE *fin = NULL;
-    fin = fopen("python/embedding.txt" , "r");
-    if(fscanf(fin, "%d" , &row)){printf("%d " , row);}
-    if( fscanf(fin, "%d" , &col)){printf("%d " , col); }
-    float **embedding_matrix = allocate_dynamic_float_matrix(row, col);
-    printf("\n");
-    if (fin != NULL)
-    {
-		for ( i = 0; i < row; i++)
+ 	FILE* fichier = NULL;
+	fichier = fopen(filename, "w");
+	if (fichier != NULL)
+	{
+ 		// printf("%s", filename);
+		fprintf(fichier,"epoch,%s\n", axis_name);
+
+		for (int k = 0; k < epoch; k++)
 		{
-			for ( j = 0; j < col; j++)
-			{
-				if(fscanf(fin, "%f" , &myvariable)){
-				embedding_matrix[i][j] = myvariable;
-				}
-			}
-			
-		}
-		fclose(fin);
-
-    }
-
-	dim[0] = row;
-	dim[1] = col;
-
-
-	return embedding_matrix;
-
-
-
-}
-
-
-int **GetData(int *dim) {
-
-    int myvariable;
-    int i, j ;
-	int row, col;
-    FILE *fin = NULL;
-    fin = fopen("python/data.txt" , "r");
-    if(fscanf(fin, "%d" , &row)){printf("%d " , row);}
-    if(fscanf(fin, "%d" , &col)){printf("%d " , col); }
-    int **data = allocate_dynamic_int_matrix(row, col);
-    printf("\n");
-    if (fin != NULL)
-    {
-		 
-		for ( i = 0; i < row; i++)
-		{
-			for ( j = 0; j < col; j++)
-			{
-				if(fscanf(fin, "%d" , &myvariable)){
-				data[i][j] = myvariable;
-				}
-			}
+			fprintf(fichier,"%d,%f\n", (k+1), axis[k]);
 
 		}
-
-		fclose(fin);
-
-    }
-
-	dim[0] = row;
-	dim[1] = col;
-
-	return data;
-
+	}
+	else
+	{
+		// On affiche un message d'erreur si on veut
+		printf("Impossible d'ouvrir le fichier test.txt");
+	}
 }
 
-int *load_target(int *target )
-{
-
-	FILE *stream = NULL;
-    int lrow;
-    stream = fopen("python/label.txt" , "r");
-    if(fscanf(stream, "%d" , &lrow)){printf("%d " , lrow);}
-    target = malloc(sizeof(int)*lrow);
-    printf("\n");
-    if (stream != NULL)
-    {
-        int count = 0;
-  		if (stream == NULL) {
-    	fprintf(stderr, "Error reading file\n");
-  		}
-  		while (fscanf(stream, "%d", &target[count]) == 1) {
-      	count = count+1;
-  		}
-
-    	fclose(stream);
-
-    }
-
-	return target;
-
-	
-}
-
+ 

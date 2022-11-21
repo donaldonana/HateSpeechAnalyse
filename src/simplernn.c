@@ -6,13 +6,11 @@
 #include <pthread.h>
 
 #include "simplernn.h"
-#include "utils.h"
 
 
 
 
-void training(int epoch, int **data, int *datadim, float **embedding_matrix, int *target,
-SimpleRNN *rnn, DerivedSimpleRNN *drnn, int index){
+void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int index){
 
 	double time;
     clock_t start, end ;
@@ -27,17 +25,17 @@ SimpleRNN *rnn, DerivedSimpleRNN *drnn, int index){
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
         for (int i = 0; i < index; i++)
         {
-            forward(rnn, data[i], datadim[1] , embedding_matrix);
-            backforward(rnn, datadim[1], target[i], data[i], embedding_matrix, drnn);
-            loss = loss + binary_loss_entropy(target[i], rnn->y);
-            acc = accuracy(acc , target[i], rnn->y);
+            forward(rnn, data->X[i], data->xcol , data->embedding);
+            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn);
+            loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
+            acc = accuracy(acc , data->Y[i], rnn->y);
         }
         loss = loss/index;
         acc = acc/index;
 		lost_list[e] = loss;
 		acc_list[e]  = acc ;
         printf("--> Loss : %f  accuracy : %f \n" , loss, acc);    
-        if (loss < best_lost)
+        if (rounded_float(loss) < rounded_float(best_lost))
         {
             best_lost = loss;  
 			FILE *fichier = fopen("SimpleRnn.json", "w");
@@ -256,4 +254,78 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
 	fprintf(fo, "}\n") ;
 
 }
+
+
+
+void get_data(Data *data){
+
+    float a;
+	int b ;
+    FILE *fin = NULL;
+    FILE *file = NULL;
+	FILE *stream = NULL;
+    fin = fopen("python/data.txt" , "r");
+    if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
+    if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
+    file = fopen("python/embedding.txt" , "r");
+	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
+    if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
+
+	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
+	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
+	data->Y = malloc(sizeof(int)*(data->xraw));
+
+	// embeddind matrix
+	if (file != NULL)
+    {
+		for (int i = 0; i < data->eraw; i++)
+		{
+			for (int j = 0; j < data->ecol; j++)
+			{
+				if(fscanf(file, "%f" , &a)){
+				data->embedding[i][j] = a;
+				}
+			}
+			
+		}
+    }
+
+	// X matrix
+	if (fin != NULL)
+    {
+		 
+		for ( int i = 0; i < data->xraw; i++)
+		{
+			for ( int j = 0; j < data->xcol; j++)
+			{
+				if(fscanf(fin, "%d" , &b)){
+				data->X[i][j] = b;
+				}
+			}
+
+		}
+
+    }
+
+	// Y vector
+    stream = fopen("python/label.txt" , "r");
+    if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
+	if (stream != NULL)
+    {
+        int count = 0;
+  		if (stream == NULL) {
+    	fprintf(stderr, "Error reading file\n");
+  		}
+  		while (fscanf(stream, "%d", &data->Y[count]) == 1) {
+      	count = count+1;
+  		}
+    }
+
+	fclose(fin);
+	fclose(file);
+	fclose(stream);
+
+
+}
+
 
