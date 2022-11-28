@@ -17,6 +17,8 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
     float loss , acc , best_lost = 4000.0  ;
 	float *lost_list = malloc(sizeof(float)*epoch);
 	float *acc_list  = malloc(sizeof(float)*epoch);
+	dSimpleRNN *grnn = malloc(sizeof(dSimpleRNN));
+	initialize_rnn_gradient(rnn, grnn);
 
     start = clock();
     for (int e = 0; e < epoch ; e++)
@@ -26,8 +28,9 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
         for (int i = 0; i < index; i++)
         {
             forward(rnn, data->X[i], data->xcol , data->embedding);
-            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn);
-            loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
+            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, grnn);
+            gradient_descent(rnn, grnn, 1);
+			loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
             acc = accuracy(acc , data->Y[i], rnn->y);
         }
         loss = loss/index;
@@ -35,7 +38,7 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
 		lost_list[e] = loss;
 		acc_list[e]  = acc ;
         printf("--> Loss : %f  accuracy : %f \n" , loss, acc);    
-        if ((loss) < (best_lost))
+        if (rounded_float(loss) < rounded_float(best_lost))
         {
             best_lost = loss;  
 			FILE *fichier = fopen("SimpleRnn.json", "w");
@@ -47,16 +50,8 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
     end = clock();
     time = (double)(end - start) / CLOCKS_PER_SEC;
     printf("\nTRAINING PHASE END IN %lf s\n" , time);
-    printf("\nMODEL SAVE WITH BEST LOST = %lf \n" , best_lost);
-
-	char axis_name[] = "loss";
-	char filename[] = "DataForPlot/loss_lc_e10_b64_t4.txt";
-	data_for_plot(filename, epoch, lost_list, axis_name);
-	char axis_acc[] = "accuracy";
-	char filename_acc[] = "DataForPlot/acc_lc_e10_b64_t4.txt";
-	data_for_plot(filename_acc, epoch, acc_list, axis_acc);
-	free(acc_list);
-	free(lost_list);
+    printf("\n BEST LOST IS %lf : \n" , best_lost);
+ 
 
 }
 
@@ -74,7 +69,6 @@ void testing(SimpleRNN *rnn, int **data, int *datadim, float **embedding_matrix,
     printf("\n TEST LOST IS %lf : \n" , Loss);
 
 }
-
 
 void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 
@@ -99,10 +93,8 @@ void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 	
 }
 
-
-
 void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, 
-DerivedSimpleRNN *drnn)
+DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
 {
 
 	// dy = y_pred - label
@@ -144,11 +136,24 @@ DerivedSimpleRNN *drnn)
 	}
 
 	// Parameters Update  with SGD  o = o - lr*do
-	minus_matrix(rnn->W_yh ,rnn->W_yh, drnn->dWhy , rnn->hidden_size, rnn->output_size);
-	minus_matrix(rnn->W_hh ,rnn->W_hh, drnn->dWhh , rnn->hidden_size, rnn->hidden_size);
-	minus_matrix(rnn->W_hx ,rnn->W_hx, drnn->dWhx , rnn->input_size, rnn->hidden_size);
-	minus_vect(rnn->b_y, rnn->b_y, drnn->dby, rnn->output_size);
-	minus_vect(rnn->b_h ,rnn->b_h, drnn->dbh , rnn->hidden_size);
+	 add_matrix(grnn->d_Whx, grnn->d_Whx, drnn->dWhx, rnn->input_size, rnn->hidden_size);
+	 add_matrix(grnn->d_Whh, grnn->d_Whh, drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
+	 add_matrix(grnn->d_Why, grnn->d_Why, drnn->dWhy, rnn->hidden_size, rnn->output_size);
+	 add_vect(grnn->d_bh, grnn->d_bh, drnn->dbh, rnn->hidden_size);
+	 add_vect(grnn->d_by, grnn->d_by, drnn->dby, rnn->output_size);
+
+	 
+}
+
+void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n){
+
+	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n);
+	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n);
+	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n);
+	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n);
+	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n);
+	zero_rnn_gradient(rnn, grnn);
+
 }
 
 
@@ -173,6 +178,27 @@ float accuracy(float acc, float y, float *y_pred) {
 	return acc;
 }
 
+void copy_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn){
+
+	secondrnn->W_hx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
+	copy_mat(secondrnn->W_hx, rnn->W_hx, rnn->input_size, rnn->hidden_size);
+	secondrnn->W_hh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
+	copy_mat(secondrnn->W_hh, rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+	secondrnn->W_yh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
+	copy_mat(secondrnn->W_yh, rnn->W_yh, rnn->hidden_size, rnn->output_size);
+	secondrnn->b_h = malloc(sizeof(float)*rnn->hidden_size);
+	copy_vect(secondrnn->b_h, rnn->b_h, rnn->hidden_size);
+	secondrnn->b_y = malloc(sizeof(float)*rnn->output_size);
+	copy_vect(secondrnn->b_y, rnn->b_y, rnn->output_size);
+
+	secondrnn->hidden_size = rnn->hidden_size;
+	secondrnn->output_size = rnn->output_size;
+	secondrnn->input_size = rnn->input_size;
+
+	secondrnn->y = malloc(sizeof(float)*rnn->output_size);
+	secondrnn->h = allocate_dynamic_float_matrix(100, rnn->hidden_size);
+
+}
 
 void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
 {
@@ -211,7 +237,25 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 	rnn->h = allocate_dynamic_float_matrix(100, rnn->hidden_size);
 
 }
+void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
+	grnn->d_Whx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
+	grnn->d_Whh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
+	grnn->d_Why = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
+	grnn->d_bh = malloc(sizeof(float)*rnn->hidden_size);
+	grnn->d_by = malloc(sizeof(float)*rnn->output_size);
+	zero_rnn_gradient(rnn,grnn);
 
+}
+void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
+
+	initialize_vect_zero(grnn->d_bh, rnn->hidden_size);
+	initialize_vect_zero(grnn->d_by, rnn->output_size);
+	initialize_mat_zero(grnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
+	initialize_mat_zero(grnn->d_Whx, rnn->input_size, rnn->hidden_size);
+	initialize_mat_zero(grnn->d_Why, rnn->hidden_size, rnn->output_size);
+
+
+}
 void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
 {
 
@@ -255,26 +299,37 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
 
 }
 
+void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn){
+
+add_matrix(grnn->d_Whx, grnn->d_Whx, secondgrnn->d_Whx, rnn->input_size,  rnn->hidden_size);
+add_matrix(grnn->d_Whh, grnn->d_Whh, secondgrnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
+add_matrix(grnn->d_Why, grnn->d_Why, secondgrnn->d_Why, rnn->hidden_size, rnn->output_size);
+add_vect(grnn->d_bh, grnn->d_bh, secondgrnn->d_bh, rnn->hidden_size);
+add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
 
 
-void get_data(Data *data){
+}
+
+
+
+
+void get_data(Data *data, int nthread){
 
     float a;
 	int b ;
     FILE *fin = NULL;
     FILE *file = NULL;
 	FILE *stream = NULL;
-    fin = fopen("python/data.txt" , "r");
+    fin = fopen("../python/data.txt" , "r");
     if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
     if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
-    file = fopen("python/embedding.txt" , "r");
+    file = fopen("../python/embedding.txt" , "r");
 	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
     if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
 
 	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
 	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
 	data->Y = malloc(sizeof(int)*(data->xraw));
-
 	// embeddind matrix
 	if (file != NULL)
     {
@@ -306,7 +361,7 @@ void get_data(Data *data){
 
     }
 	// Y vector
-    stream = fopen("python/label.txt" , "r");
+    stream = fopen("../python/label.txt" , "r");
     if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
 	if (stream != NULL)
     {
@@ -319,11 +374,30 @@ void get_data(Data *data){
   		}
     }
 
+	data->train_size = data->xraw * 0.7 ;
+
+	// printf(" Train data from index 1 to index %d  \n " , data->train_size);
+	// printf("Test  data from index %d to index %d \n " , (data->train_size+1), data->xraw);
+
+	// printf("We have %d mini batch for Train data \n", nthread);
+	// int next = -1;
+	// int prev = 1;
+	// for (int i = 0; i < nthread; i++)
+	// {
+	// 	next = (int)(next + 1000/nthread);
+	// 	printf("---->%d mini batch from index %d to %d \n" ,(i+1) , prev , (next+1));
+	// 	prev = next+2;
+	// }
+	
+
+
 	fclose(fin);
 	fclose(file);
 	fclose(stream);
 
 
 }
+
+ 
 
 

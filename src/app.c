@@ -26,7 +26,7 @@ int main()
   initialize_rnn_derived(rnn , drnn);
 
   printf("\n ****************** TRAINING PHASE START ****************\n");
-  training(10, rnn, drnn, data, 1000) ;
+  training(30, rnn, drnn, data, 1000) ;
 
   // printf("\n ******************* TEST PHASE START *******************\n");
   // testing(rnn, data, datadim, embedding_matrix, train, target);
