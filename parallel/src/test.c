@@ -7,11 +7,13 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
-# define NUM_THREADS 2
+// # define NUM_THREADS 2
 
 struct timeval start_t , end_t ;
 
-struct thread_param {  
+
+typedef struct thread_param thread_param;
+struct thread_param{  
 SimpleRNN *rnn;
 DerivedSimpleRNN *drnn;
 dSimpleRNN *grnn;
@@ -22,7 +24,7 @@ float loss;
 
 Data *data ;
 
-struct thread_param threads_params[NUM_THREADS];
+// struct thread_param threads_params[NUM_THREADS];
 
 void *ThreadTrain (void *params) { // Code du thread
     struct thread_param *mes_param ;
@@ -40,14 +42,24 @@ void *ThreadTrain (void *params) { // Code du thread
     pthread_exit (NULL) ;
 }
 
-int main()
+int main(int argc, char **argv)
 {
     // srand(time(NULL));
+
+    int NUM_THREADS = 2;
+
+    if (argc > 1)
+    {
+
+        NUM_THREADS = atoi(argv[1]);
+        // printf("\n %d \n", NUM_THREADS);
+         
+    }
+    thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
 
 
     int size = 1000;
     double totaltime;
-    // clock_t start_t, end_t ;
     data = malloc(sizeof(Data));
     get_data(data, 2);
     int n = size/NUM_THREADS;
@@ -56,7 +68,7 @@ int main()
 
 
     int input = 128 , hidden = 64 , output = 2;
-    pthread_t threads[NUM_THREADS];
+    pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
     void *status;
     int r;
@@ -65,7 +77,7 @@ int main()
     /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    // start_t = clock();
+
     gettimeofday(&start_t, NULL);
     printf("\n %d \n", n);
 
@@ -79,56 +91,56 @@ int main()
 
     for (int i = 0; i < 10; i++)
     {
-    start = 0 ; 
-    end = n-1 ;
+        start = 0 ; 
+        end = n-1 ;
 
-    float Loss = 0.0 ;
-    printf("\n epoch %d \n", (i+1));
-        
-    for ( int i=0; i < NUM_THREADS ; i ++) {
+        float Loss = 0.0 ;
+        printf("\n epoch %d \n", (i+1));
+            
+        for ( int i=0; i < NUM_THREADS ; i ++) {
 
-        threads_params[i].rnn = malloc(sizeof(SimpleRNN));
-        // initialize_rnn(threads_params[i].rnn, input, hidden, output);
-        copy_rnn(rnn, threads_params[i].rnn);
-        threads_params[i].drnn = malloc(sizeof(DerivedSimpleRNN));
-        initialize_rnn_derived(threads_params[i].rnn , threads_params[i].drnn);
+            threads_params[i].rnn = malloc(sizeof(SimpleRNN));
+            // initialize_rnn(threads_params[i].rnn, input, hidden, output);
+            copy_rnn(rnn, threads_params[i].rnn);
+            threads_params[i].drnn = malloc(sizeof(DerivedSimpleRNN));
+            initialize_rnn_derived(threads_params[i].rnn , threads_params[i].drnn);
 
-        threads_params[i].loss = 0.0;
-        threads_params[i].start = start;
-        threads_params[i].end = end;
+            threads_params[i].loss = 0.0;
+            threads_params[i].start = start;
+            threads_params[i].end = end;
 
 
-        r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
-        if (r) {
-            printf("ERROR; pthread_create() return code : %d\n", r);
-            exit(-1);
+            r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
+            if (r) {
+                printf("ERROR; pthread_create() return code : %d\n", r);
+                exit(-1);
+            }
+            printf("Thread %d has starded \n", i);
+
+            start = end + 1;
+            end = end + n;
+
         }
-        printf("Thread %d has starded \n", i);
-
-        start = end + 1;
-        end = end + n;
-
-    }
-    printf("----Thread create phase end----\n");
+        printf("----Thread create phase end----\n");
 
 
-    /* Free attribute and wait for the other threads */
-    pthread_attr_destroy(&attr);
+        /* Free attribute and wait for the other threads */
+        pthread_attr_destroy(&attr);
 
-    for(int t=0; t<NUM_THREADS; t++) {
-        r = pthread_join(threads[t], &status);
-        if (r) {
-            printf("ERROR; return code from pthread_join() is %d\n", r);
-            exit(-1);
+        for(int t=0; t<NUM_THREADS; t++) {
+            r = pthread_join(threads[t], &status);
+            if (r) {
+                printf("ERROR; return code from pthread_join() is %d\n", r);
+                exit(-1);
+            }
+            Loss = Loss + threads_params[t].loss ;
+            // somme_gradient(grnn, threads_params[t].grnn, rnn);
+            gradient_descent(rnn, threads_params[t].grnn,  n);
+            printf("Main: completed join with thread %d an loss = %f\n",t, (threads_params[t].loss)/n);
+
         }
-        Loss = Loss + threads_params[t].loss ;
-        // somme_gradient(grnn, threads_params[t].grnn, rnn);
-        gradient_descent(rnn, threads_params[t].grnn,  n);
-        printf("Main: completed join with thread %d an loss = %f\n",t, (threads_params[t].loss)/n);
 
-    }
-
-    printf("--> Loss : %f  \n" , Loss/size);    
+        printf("--> Loss : %f  \n" , Loss/size);    
  
         
     }
