@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     initialize_rnn_derived(rnn , drnn);
 
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 50; i++)
     {
         start = 0 ; 
         end = n-1 ;
