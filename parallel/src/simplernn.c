@@ -142,18 +142,15 @@ DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
 	 add_vect(grnn->d_bh, grnn->d_bh, drnn->dbh, rnn->hidden_size);
 	 add_vect(grnn->d_by, grnn->d_by, drnn->dby, rnn->output_size);
 
-	 
 }
 
 void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n){
-
 	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n);
 	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n);
 	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n);
 	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n);
 	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n);
 	zero_rnn_gradient(rnn, grnn);
-
 }
 
 
@@ -200,9 +197,16 @@ void copy_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn){
 
 }
 
+void reinitialize_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn){
+	copy_mat(secondrnn->W_hx, rnn->W_hx, rnn->input_size, rnn->hidden_size);
+	copy_mat(secondrnn->W_hh, rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+	copy_mat(secondrnn->W_yh, rnn->W_yh, rnn->hidden_size, rnn->output_size);
+	copy_vect(secondrnn->b_h, rnn->b_h, rnn->hidden_size);
+	copy_vect(secondrnn->b_y, rnn->b_y, rnn->output_size);
+}
+
 void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
 {
-
 	deallocate_dynamic_float_matrix(drnn->dWhx, rnn->input_size);
 	deallocate_dynamic_float_matrix(drnn->dWhh , rnn->hidden_size);
 	deallocate_dynamic_float_matrix(drnn->WhhT , rnn->hidden_size);
@@ -214,8 +218,19 @@ void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
     deallocate_dynamic_float_matrix(drnn->temp2 , rnn->hidden_size);
 	deallocate_dynamic_float_matrix(drnn->temp3 , rnn->hidden_size);
 	free(drnn->dh) ;
-
 }
+
+void deallocate_rnn(SimpleRNN *rnn)
+{
+	deallocate_dynamic_float_matrix(rnn->W_hx, rnn->input_size);
+	deallocate_dynamic_float_matrix(rnn->W_hh , rnn->hidden_size);
+	deallocate_dynamic_float_matrix(rnn->W_yh , rnn->hidden_size);
+	free(rnn->b_h) ;
+	free(rnn->b_y) ;
+	free(rnn->y) ;
+    deallocate_dynamic_float_matrix(rnn->h , 100);
+}
+
 
 
 void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_size)
@@ -244,8 +259,17 @@ void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
 	grnn->d_bh = malloc(sizeof(float)*rnn->hidden_size);
 	grnn->d_by = malloc(sizeof(float)*rnn->output_size);
 	zero_rnn_gradient(rnn,grnn);
-
 }
+
+void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn)
+{
+	deallocate_dynamic_float_matrix(grnn->d_Whx, rnn->input_size);
+	deallocate_dynamic_float_matrix(grnn->d_Whh , rnn->hidden_size);
+	deallocate_dynamic_float_matrix(grnn->d_Why , rnn->hidden_size);
+	free(grnn->d_bh) ;
+	free(grnn->d_by) ;
+}
+
 void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
 
 	initialize_vect_zero(grnn->d_bh, rnn->hidden_size);

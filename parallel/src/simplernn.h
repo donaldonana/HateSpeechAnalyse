@@ -89,6 +89,8 @@ void dhraw(float *dhraw, float *lasth, float *dh, int n);
 
 void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
+void deallocate_rnn(SimpleRNN *rnn);
+
 void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
@@ -103,7 +105,12 @@ void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
 
 void copy_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 
+void reinitialize_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
+
 void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn);
+
+void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
+
 
 
 #endif
