@@ -12,6 +12,7 @@
 struct timeval start_t , end_t ;
 SimpleRNN *rnn;
 Data *data ;
+float lr;
 int batch_size  ;
 
 pthread_mutex_t mutexRnn;
@@ -47,7 +48,7 @@ void *ThreadTrain (void *params) { // Code du thread
         if(nb_traite==batch_size || i == (mes_param->end -1))
         {	
         pthread_mutex_lock (&mutexRnn);
-            gradient_descent(rnn, mes_param->grnn,  nb_traite);
+            gradient_descent(rnn, mes_param->grnn,  nb_traite, lr);
             reinitialize_rnn(rnn, mes_param->rnn);
         pthread_mutex_unlock (&mutexRnn);
             nb_traite = 0;
@@ -65,13 +66,14 @@ int main(int argc, char **argv)
 {
     // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    float val_loss;
+    // float val_loss;
+    lr = 0.01 ;
 
     // int 
     double totaltime;
     data = malloc(sizeof(Data));
     get_data(data, 2);
-    int size = 4000;
+    int size = 1000;
     int epoch = 20, NUM_THREADS = 2;
     batch_size = 16;
     int n , start , end;
@@ -102,6 +104,7 @@ int main(int argc, char **argv)
 
     rnn = malloc(sizeof(SimpleRNN));
     initialize_rnn(rnn, input, hidden, output);
+    // lr = 0.01;
     
     for (int i = 0; i < epoch; i++)
     {

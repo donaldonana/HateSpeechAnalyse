@@ -56,9 +56,9 @@ int *load_target(int *target );
 
 void vect_mult(float **r, float *a , float *b, int n , int m);
 
-void update_matrix(float **r, float **a , float **b, int row, int col, int n);
+void update_matrix(float **r, float **a , float **b, int row, int col, int n, float lr);
 
-void update_vect(float *r, float *a, float *b, int col , int n);
+void update_vect(float *r, float *a, float *b, int col , int n, float lr);
 
 void trans_mat(float **r, float **a, int row , int col);
 

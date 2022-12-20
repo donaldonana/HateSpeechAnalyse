@@ -8,16 +8,15 @@
 #include <pthread.h>
 
 // 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
-// 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
+// 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
 
 int main()
 {
   srand(time(NULL));
-
   printf("\n ***************** IMPORT PHASE START *****************\n");
   Data *data = malloc(sizeof(Data));
   get_data(data);
-
+  
   //  **************** INITIALIZE THE RNN PHASE*****************
   SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
   DerivedSimpleRNN *drnn = malloc(sizeof(DerivedSimpleRNN));

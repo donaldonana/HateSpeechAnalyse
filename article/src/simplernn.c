@@ -29,7 +29,7 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
         {
             forward(rnn, data->X[i], data->xcol , data->embedding);
             backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, grnn);
-            gradient_descent(rnn, grnn, 1);
+            gradient_descent(rnn, grnn, 1, 0.01);
 			loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
             acc = accuracy(acc , data->Y[i], rnn->y);
         }
@@ -144,12 +144,12 @@ DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
 
 }
 
-void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n){
-	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n);
-	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n);
-	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n);
-	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n);
-	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n);
+void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr){
+	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n, lr);
+	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n, lr);
+	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n, lr);
 	zero_rnn_gradient(rnn, grnn);
 }
 

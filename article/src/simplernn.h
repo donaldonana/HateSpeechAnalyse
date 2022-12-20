@@ -94,7 +94,7 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
 
 void get_data(Data *data, int nthread);
 
-void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n);
+void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr);
 
 void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
 
