@@ -12,10 +12,14 @@ struct Data
 	int xcol;
 	int ecol;
     int eraw;
+	int start_val;
+	int end_val;
 	int **X;
     int *Y;
     float **embedding;
+
 };
+
 
 
 

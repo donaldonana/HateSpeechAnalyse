@@ -319,6 +319,14 @@ void get_data(Data *data){
   		}
     }
 
+
+	data->start_val = data->xraw * 0.7 ;
+	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
+	printf(" Train data from index 1 to index %d  \n " , data->start_val);
+	printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
+	printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+
+
 	fclose(fin);
 	fclose(file);
 	fclose(stream);
