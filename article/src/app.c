@@ -65,16 +65,17 @@ void *ThreadTrain (void *params) { // Code du thread
 int main(int argc, char **argv)
 {
     // srand(time(NULL));
+
+    float minImprove = 0.001 ;
     pthread_mutex_init(&mutexRnn, NULL);
+
     lr = 0.01 ;
-    // float preLog ;
-
-
+    float preLog, log;
     double totaltime;
     data = malloc(sizeof(Data));
     get_data(data, 2);
-    int size = 2000, divide = 0;
-    int epoch = 20, NUM_THREADS = 2;
+    int size = 2000, divide = 0, stop = 0, e = 0 ;
+    int epoch = 10, NUM_THREADS = 2;
     batch_size = 16;
     int n , start , end;
     float Loss , Acc ;
@@ -104,15 +105,23 @@ int main(int argc, char **argv)
 
     rnn = malloc(sizeof(SimpleRNN));
     initialize_rnn(rnn, input, hidden, output);
-    // preLog = testing(rnn, data, data->start_val, (data->end_val-2000));
 
-    
-    for (int i = 0; i < epoch; i++)
+    preLog = testing(rnn, data, data->start_val, (data->end_val-2000));
+    printf("--> preLog : %f  \n\n" , preLog);    
+
+
+    while ( (e < epoch) || (stop != 1) )
     {
         start = 0 ; 
         end = n-1 ;
         Loss = Acc = 0.0 ;
-        printf("\n epoch %d \n", (i+1));
+        printf("\n epoch %d \n", (e+1));
+
+        if (divide == 1)
+        {
+            lr = lr  / 2;
+        }
+        
             
         for ( int i=0; i < NUM_THREADS ; i ++) {
             threads_params[i].rnn = malloc(sizeof(SimpleRNN));
@@ -150,9 +159,23 @@ int main(int argc, char **argv)
         }
 
         // printf("--> Loss : %f  \n" , Loss/size);    
+
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
-        // val_loss = testing(rnn, data, data->start_val, (data->end_val-2000));
-        // printf("--> Loss : %f  \n" , val_loss);    
+        log = testing(rnn, data, data->start_val, (data->end_val-2000));
+        printf("--> diff : %f  \n" , fabs(preLog - log));   
+
+
+        if (fabs(preLog - log) < minImprove)
+        {
+            if (divide == 0)
+            {
+                printf("\n Learning Rate will be divide \n ");
+                divide = 1 ;
+            }
+            else { stop  = 1 ;}
+        }
+        preLog = log;
+        e = e + 1 ; 
 
 
     }
