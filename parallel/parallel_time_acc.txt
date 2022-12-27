@@ -1,0 +1,335 @@
+gcc -O3 -g3 -c -Wall src/test.c -o obj/test.o -lm -lpthread
+gcc -o bin/test.exe obj/utils.o obj/simplernn.o obj/test.o -lm -lpthread
+./bin/test.exe
+ xraw : 41255  xcol : 50 
+ eraw : 11524  ecol : 128 
+ yraw : 41255 
+ Train data from index 1 to index 28878  
+ Validation data from index 28879 to index 33002  
+ Test  data from index 33003 to index 41255 
+ 
+----Thread create phase start---- 
+
+ 1000 
+
+ epoch 1 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.637306 and Accuracy = 0.642000
+Main: thread completed 1 an loss = 0.701749 and Accuracy = 0.564000
+--> Loss : 0.669528  Accuracy : 0.603000 
+
+ epoch 2 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.574514 and Accuracy = 0.733000
+Main: thread completed 1 an loss = 0.659828 and Accuracy = 0.613000
+--> Loss : 0.617171  Accuracy : 0.673000 
+
+ epoch 3 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.539784 and Accuracy = 0.758000
+Main: thread completed 1 an loss = 0.640626 and Accuracy = 0.618000
+--> Loss : 0.590205  Accuracy : 0.688000 
+
+ epoch 4 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.513759 and Accuracy = 0.781000
+Main: thread completed 1 an loss = 0.626012 and Accuracy = 0.634000
+--> Loss : 0.569886  Accuracy : 0.707500 
+
+ epoch 5 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.491782 and Accuracy = 0.790000
+Main: thread completed 1 an loss = 0.614667 and Accuracy = 0.644000
+--> Loss : 0.553224  Accuracy : 0.717000 
+
+ epoch 6 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.472891 and Accuracy = 0.801000
+Main: thread completed 1 an loss = 0.606468 and Accuracy = 0.647000
+--> Loss : 0.539679  Accuracy : 0.724000 
+
+ epoch 7 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.457068 and Accuracy = 0.818000
+Main: thread completed 1 an loss = 0.596885 and Accuracy = 0.651000
+--> Loss : 0.526976  Accuracy : 0.734500 
+
+ epoch 8 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.439328 and Accuracy = 0.825000
+Main: thread completed 1 an loss = 0.589521 and Accuracy = 0.671000
+--> Loss : 0.514425  Accuracy : 0.748000 
+
+ epoch 9 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.428718 and Accuracy = 0.829000
+Main: thread completed 1 an loss = 0.578579 and Accuracy = 0.670000
+--> Loss : 0.503649  Accuracy : 0.749500 
+
+ epoch 10 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.416401 and Accuracy = 0.835000
+Main: thread completed 1 an loss = 0.571410 and Accuracy = 0.675000
+--> Loss : 0.493906  Accuracy : 0.755000 
+
+ epoch 11 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.403665 and Accuracy = 0.838000
+Main: thread completed 1 an loss = 0.561600 and Accuracy = 0.689000
+--> Loss : 0.482633  Accuracy : 0.763500 
+
+ epoch 12 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.391766 and Accuracy = 0.839000
+Main: thread completed 1 an loss = 0.555136 and Accuracy = 0.685000
+--> Loss : 0.473451  Accuracy : 0.762000 
+
+ epoch 13 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.381344 and Accuracy = 0.846000
+Main: thread completed 1 an loss = 0.548837 and Accuracy = 0.699000
+--> Loss : 0.465090  Accuracy : 0.772500 
+
+ epoch 14 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.375883 and Accuracy = 0.850000
+Main: thread completed 1 an loss = 0.543220 and Accuracy = 0.709000
+--> Loss : 0.459551  Accuracy : 0.779500 
+
+ epoch 15 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.362625 and Accuracy = 0.861000
+Main: thread completed 1 an loss = 0.533803 and Accuracy = 0.710000
+--> Loss : 0.448214  Accuracy : 0.785500 
+
+ epoch 16 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.355646 and Accuracy = 0.867000
+Main: thread completed 1 an loss = 0.527414 and Accuracy = 0.719000
+--> Loss : 0.441530  Accuracy : 0.793000 
+
+ epoch 17 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.359006 and Accuracy = 0.864000
+Main: thread completed 1 an loss = 0.529261 and Accuracy = 0.703000
+--> Loss : 0.444133  Accuracy : 0.783500 
+
+ epoch 18 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.344813 and Accuracy = 0.869000
+Main: thread completed 1 an loss = 0.516539 and Accuracy = 0.717000
+--> Loss : 0.430676  Accuracy : 0.793000 
+
+ epoch 19 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.334166 and Accuracy = 0.872000
+Main: thread completed 1 an loss = 0.510550 and Accuracy = 0.726000
+--> Loss : 0.422358  Accuracy : 0.799000 
+
+ epoch 20 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.327790 and Accuracy = 0.874000
+Main: thread completed 1 an loss = 0.505985 and Accuracy = 0.724000
+--> Loss : 0.416888  Accuracy : 0.799000 
+
+ epoch 21 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.320287 and Accuracy = 0.878000
+Main: thread completed 1 an loss = 0.500056 and Accuracy = 0.728000
+--> Loss : 0.410172  Accuracy : 0.803000 
+
+ epoch 22 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.328065 and Accuracy = 0.879000
+Main: thread completed 1 an loss = 0.497906 and Accuracy = 0.734000
+--> Loss : 0.412985  Accuracy : 0.806500 
+
+ epoch 23 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.306384 and Accuracy = 0.893000
+Main: thread completed 1 an loss = 0.487424 and Accuracy = 0.737000
+--> Loss : 0.396904  Accuracy : 0.815000 
+
+ epoch 24 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.310329 and Accuracy = 0.888000
+Main: thread completed 1 an loss = 0.489860 and Accuracy = 0.737000
+--> Loss : 0.400095  Accuracy : 0.812500 
+
+ epoch 25 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.299251 and Accuracy = 0.899000
+Main: thread completed 1 an loss = 0.478398 and Accuracy = 0.756000
+--> Loss : 0.388824  Accuracy : 0.827500 
+
+ epoch 26 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.301772 and Accuracy = 0.890000
+Main: thread completed 1 an loss = 0.472013 and Accuracy = 0.751000
+--> Loss : 0.386893  Accuracy : 0.820500 
+
+ epoch 27 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.295088 and Accuracy = 0.892000
+Main: thread completed 1 an loss = 0.470456 and Accuracy = 0.752000
+--> Loss : 0.382772  Accuracy : 0.822000 
+
+ epoch 28 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.289441 and Accuracy = 0.893000
+Main: thread completed 1 an loss = 0.458511 and Accuracy = 0.780000
+--> Loss : 0.373976  Accuracy : 0.836500 
+
+ epoch 29 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.288022 and Accuracy = 0.897000
+Main: thread completed 1 an loss = 0.459127 and Accuracy = 0.781000
+--> Loss : 0.373575  Accuracy : 0.839000 
+
+ epoch 30 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.301055 and Accuracy = 0.896000
+Main: thread completed 1 an loss = 0.457617 and Accuracy = 0.771000
+--> Loss : 0.379336  Accuracy : 0.833500 
+
+ epoch 31 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.316181 and Accuracy = 0.880000
+Main: thread completed 1 an loss = 0.476522 and Accuracy = 0.748000
+--> Loss : 0.396352  Accuracy : 0.814000 
+
+ epoch 32 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.276271 and Accuracy = 0.904000
+Main: thread completed 1 an loss = 0.444130 and Accuracy = 0.783000
+--> Loss : 0.360201  Accuracy : 0.843500 
+
+ epoch 33 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.266557 and Accuracy = 0.908000
+Main: thread completed 1 an loss = 0.432774 and Accuracy = 0.783000
+--> Loss : 0.349665  Accuracy : 0.845500 
+
+ epoch 34 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.258095 and Accuracy = 0.917000
+Main: thread completed 1 an loss = 0.431444 and Accuracy = 0.791000
+--> Loss : 0.344769  Accuracy : 0.854000 
+
+ epoch 35 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.257437 and Accuracy = 0.912000
+Main: thread completed 1 an loss = 0.426021 and Accuracy = 0.793000
+--> Loss : 0.341729  Accuracy : 0.852500 
+
+ epoch 36 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.261897 and Accuracy = 0.913000
+Main: thread completed 1 an loss = 0.425483 and Accuracy = 0.791000
+--> Loss : 0.343690  Accuracy : 0.852000 
+
+ epoch 37 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.245542 and Accuracy = 0.921000
+Main: thread completed 1 an loss = 0.411975 and Accuracy = 0.801000
+--> Loss : 0.328759  Accuracy : 0.861000 
+
+ epoch 38 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.243892 and Accuracy = 0.923000
+Main: thread completed 1 an loss = 0.402087 and Accuracy = 0.798000
+--> Loss : 0.322989  Accuracy : 0.860500 
+
+ epoch 39 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.243445 and Accuracy = 0.922000
+Main: thread completed 1 an loss = 0.404008 and Accuracy = 0.809000
+--> Loss : 0.323726  Accuracy : 0.865500 
+
+ epoch 40 
+Thread 0 has starded 
+Thread 1 has starded 
+----Thread create phase end----
+Main: thread completed 0 an loss = 0.244710 and Accuracy = 0.925000
+Main: thread completed 1 an loss = 0.402565 and Accuracy = 0.807000
+--> Loss : 0.323637  Accuracy : 0.866000 
+
+TRAINING PHASE END IN 193.960497 s

@@ -45,6 +45,9 @@ void add_vect(float *r , float *a, float *b, int n);
 
 void mat_mul(float *r, float* a, float** b, int n, int p) ;
 
+void update_matrix_model( float **a , float **b, int row, int col, int n);
+
+void update_vect_model(float *a, float *b, int col , int n);
 
 void add_three_vect(float *r, float *a, float *b, float *c, int n);
 

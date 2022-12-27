@@ -323,17 +323,26 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
 
 }
 
-void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn){
+void somme_gradient(dSimpleRNN *grnn, SimpleRNN *slavernn){
 
-add_matrix(grnn->d_Whx, grnn->d_Whx, secondgrnn->d_Whx, rnn->input_size,  rnn->hidden_size);
-add_matrix(grnn->d_Whh, grnn->d_Whh, secondgrnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
-add_matrix(grnn->d_Why, grnn->d_Why, secondgrnn->d_Why, rnn->hidden_size, rnn->output_size);
-add_vect(grnn->d_bh, grnn->d_bh, secondgrnn->d_bh, rnn->hidden_size);
-add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
-
+add_matrix(grnn->d_Whx, grnn->d_Whx, slavernn->W_hx, slavernn->input_size,  slavernn->hidden_size);
+add_matrix(grnn->d_Whh, grnn->d_Whh, slavernn->W_hh, slavernn->hidden_size, slavernn->hidden_size);
+add_matrix(grnn->d_Why, grnn->d_Why, slavernn->W_yh, slavernn->hidden_size, slavernn->output_size);
+add_vect(grnn->d_bh, grnn->d_bh, slavernn->b_h, slavernn->hidden_size);
+add_vect(grnn->d_by, grnn->d_by, slavernn->b_y, slavernn->output_size);
 
 }
 
+void modelUpdate(SimpleRNN *rnn, dSimpleRNN *grnn, int NUM_THREADS){
+
+	update_matrix_model(rnn->W_hh, grnn->d_Whh, rnn->hidden_size,rnn->hidden_size, NUM_THREADS);
+	update_matrix_model(rnn->W_hx, grnn->d_Whx, rnn->input_size, rnn->hidden_size, NUM_THREADS);
+	update_matrix_model(rnn->W_yh, grnn->d_Why, rnn->hidden_size,rnn->output_size, NUM_THREADS);
+	update_vect_model(rnn->b_h, grnn->d_bh, rnn->hidden_size, NUM_THREADS);
+	update_vect_model(rnn->b_y, grnn->d_by, rnn->output_size, NUM_THREADS);
+	zero_rnn_gradient(rnn, grnn);
+	
+}
 
 
 

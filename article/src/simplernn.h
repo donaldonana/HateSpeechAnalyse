@@ -104,7 +104,9 @@ void copy_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 
 void reinitialize_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 
-void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn);
+void somme_gradient( dSimpleRNN *grnn, SimpleRNN *slavernn);
+
+void modelUpdate(SimpleRNN *rnn, dSimpleRNN *grnn, int NUM_THREADS);
 
 void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
 

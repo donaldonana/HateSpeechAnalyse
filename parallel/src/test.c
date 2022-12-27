@@ -59,22 +59,22 @@ void *ThreadTrain (void *params) { // Code du thread
     deallocate_rnn_derived(mes_param->rnn, mes_param->drnn);
     deallocate_rnn(mes_param->rnn);
     deallocate_rnn_gradient(mes_param->rnn, mes_param->grnn);
-    pthread_exit (NULL) ;
+    pthread_exit (NULL);
 }
 
 int main(int argc, char **argv)
 {
-    // srand(time(NULL));
+    srand(time(NULL));
+
     pthread_mutex_init(&mutexRnn, NULL);
-    // float val_loss;
     lr = 0.01 ;
 
     // int 
     double totaltime;
     data = malloc(sizeof(Data));
     get_data(data, 2);
-    int size = 1000;
-    int epoch = 20, NUM_THREADS = 2;
+    int size = 2000;
+    int epoch = 40, NUM_THREADS = 2;
     batch_size = 16;
     int n , start , end;
     float Loss , Acc ;

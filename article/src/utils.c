@@ -249,6 +249,33 @@ void update_vect(float *r, float *a, float *b, int col , int n, float lr)
 
 }
 
+void update_matrix_model( float **a , float **b, int row, int col, int n)
+{
+	float mean = 1/(float)n ;
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			// a[i][j] = ( (1-1/100000)*a[i][j] + 0.01*(b[i][j]*mean - a[i][j])  ) ;
+			a[i][j] = b[i][j]*mean ;
+
+		}
+	}
+}
+
+void update_vect_model(float *a, float *b, int col , int n)
+{
+	float mean = 1/(float)n ;
+	for (int i = 0; i < col; i++)
+	{
+		a[i]= b[i]*mean ;
+
+	}
+
+}
+
+
+
 void trans_mat(float **r, float **a, int row , int col)
 {
 	for(int i = 0; i < row; i++)
