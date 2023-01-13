@@ -7,8 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 
-// 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
-// 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
+// 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
 
 int main()
 {
