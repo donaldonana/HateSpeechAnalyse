@@ -100,7 +100,6 @@ typedef struct lstm_model_t
 
 typedef struct lstm_values_cache_t {
   double* probs;
-  double* probs_before_sigma;
   double* c;
   double* h;
   double* c_old;
@@ -113,10 +112,25 @@ typedef struct lstm_values_cache_t {
   double* tanh_c_cache;
 } lstm_values_cache_t;
 
-int lstm_init_model(int X, int N, int Y, int zeros, lstm_model_parameters_t *params);
+typedef struct lstm_values_state_prev {
+  double* c_prev;
+  double* h_prev;
+} lstm_values_state_prev;
+
+int lstm_init_model(int X, int N, int Y, lstm_model_t* lstm, int zeros, 
+lstm_model_parameters_t *params);
 
 void lstm_free_model(lstm_model_t *lstm);
 
- 
+void lstm_forward_propagate(lstm_model_t* model, double *input, 
+double *h_prev, double *c_prev , lstm_values_cache_t* cache_out);
+
+lstm_values_cache_t*  lstm_cache_container_init(int X, int N, int Y);
+
+
+void lstm_cache_container_free(lstm_values_cache_t* cache_to_be_freed);
+
+void lstm_free_model(lstm_model_t* lstm);
+
 
 #endif

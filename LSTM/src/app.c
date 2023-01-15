@@ -3,6 +3,7 @@
 #include <math.h>
 #include "utilities.h"
 #include "lstm.h"
+#include "layers.h"
 #include <time.h>
 #include <string.h>
 #include <pthread.h>
@@ -39,11 +40,37 @@ int main()
   params.optimizer = OPTIMIZE_ADAM;
 
 
-  int X = 20;
+  int X = 2;
   int N = 64;
   int Y = 2; 
+  double tab[2] = {0,1};
+  lstm_model_t* lstm = e_calloc(1, sizeof(lstm_model_t));
+  lstm_init_model(X, N, Y , lstm, 0, &params); 
 
-  // lstm_init_model(X, N, Y , 0, &params); 
+  lstm_values_cache_t **cache_layers = e_calloc(X, sizeof(lstm_values_cache_t));
+
+  double *h_prev = get_zero_vector(N);
+  double *c_prev = get_zero_vector(N);
+
+  for (int t = 0; t < X; t++)
+  {
+    cache_layers[t] = lstm_cache_container_init(X, N, Y);
+    lstm_forward_propagate(lstm, tab, h_prev, c_prev, cache_layers[t]);
+    copy_vector(h_prev, cache_layers[t]->h, N);
+    copy_vector(c_prev, cache_layers[t]->c, N);
+
+    for (int i = 0; i < Y; i++)
+    {
+      printf("\n %lf " , cache_layers[t]->probs[i]);
+      printf(" , %lf " , cache_layers[t]->probs[i]);
+
+    }
+    
+
+  }
+  
+  
+  lstm_free_model(lstm);
 
   printf("\n initialization finish. \n");
    

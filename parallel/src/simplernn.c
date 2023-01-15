@@ -30,7 +30,7 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
             forward(rnn, data->X[i], data->xcol , data->embedding);
             backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, grnn);
             gradient_descent(rnn, grnn, 1, 0.01);
-			loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
+	    loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
             acc = accuracy(acc , data->Y[i], rnn->y);
         }
         loss = loss/index;

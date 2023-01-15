@@ -4,10 +4,14 @@ SRC = src
 LIB = lib
 OBJ = obj
 BIN = bin
-OBJECTS = $(OBJ)/utilities.o  $(OBJ)/lstm.o
+OBJECTS = $(OBJ)/utilities.o  $(OBJ)/lstm.o  $(OBJ)/layers.o
 HEADERS = $(SRC)/utilities.h  $(SRC)/lstm.h  $(SRC)/std_conf.h
 
 all : app test
+
+
+$(OBJ)/layers.o: $(SRC)/layers.c $(HEADERS)
+	$(CC) $(CFLAGS) $(SRC)/layers.c  -o  $(OBJ)/layers.o -lm -lpthread
 
 $(OBJ)/utilities.o: $(SRC)/utilities.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/utilities.c  -o  $(OBJ)/utilities.o -lm -lpthread
