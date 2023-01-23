@@ -134,7 +134,7 @@ int main(int argc, char **argv)
             }
         }
         printf("----Thread create phase end----\n");
-        
+
         /* Free attribute and wait for the other threads */
         pthread_attr_destroy(&attr);
         for(int t=0; t<NUM_THREADS; t++) {
@@ -149,11 +149,8 @@ int main(int argc, char **argv)
           (threads_params[t].loss)/n, (threads_params[t].acc)/n);
         }
 
-        // printf("--> Loss : %f  \n" , Loss/size);    
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
-        // val_loss = testing(rnn, data, data->start_val, (data->end_val-2000));
-        // printf("--> Loss : %f  \n" , val_loss);    
-
+          
     }
 
     gettimeofday(&end_t, NULL);

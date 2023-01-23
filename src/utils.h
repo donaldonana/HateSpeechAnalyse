@@ -3,13 +3,25 @@
 #ifndef DEF_UTILS
 #define DEF_UTILS
 
-#include "simplernn.h"
 
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
  
 
+typedef struct Data Data;
+struct Data
+{
+	int xraw;
+	int xcol;
+	int ecol;
+    int eraw;
+	int start_val;
+	int end_val;
+	int **X;
+    int *Y;
+    float **embedding;
+};
 
 
 float drand();
@@ -36,7 +48,6 @@ void ToEyeMatrix(float **A, int row, int col) ;
 
 void randomly_initalialize_mat(float **a, int row, int col);
 
-
 void initialize_mat_zero(float **a, int row, int col);
 
 void initialize_vect_zero(float *a, int n);
@@ -62,9 +73,7 @@ void minus_vect(float *r, float *a, float *b, int n);
 
 void trans_mat(float **r, float **a, int row , int col);
 
-
 void data_for_plot(char *filename, int epoch, float *axis, char *axis_name);
-
 
 void add_matrix(float **r, float **a , float **b, int row, int col);
 
@@ -72,7 +81,7 @@ void vector_store_as_json(float *r, int n, FILE *fo);
 
 void matrix_strore_as_json(float **m, int row, int col, FILE *fo);
 
- 
+void get_data(Data *data);
 
 int ArgMax( float *y_pred);
 
