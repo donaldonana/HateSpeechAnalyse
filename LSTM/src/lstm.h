@@ -24,7 +24,7 @@
 
 #define BINARY_FILE_VERSION                   1
 
-typedef struct lstm_model_parameters_t {
+typedef struct lstm_model_parameters {
   // For progress monitoring
   double loss_moving_avg;
   // For gradient descent
@@ -47,19 +47,22 @@ typedef struct lstm_model_parameters_t {
   double gradient_clip_limit;
   unsigned long iterations;
   unsigned long epochs;
-} lstm_model_parameters_t;
+} lstm_model_parameters;
 
-typedef struct lstm_model_t
-{
+typedef struct lstm_rnn
+{ 
   unsigned int X; /**< Number of input nodes */
   unsigned int N; /**< Number of neurons */
   unsigned int Y; /**< Number of output nodes */
   unsigned int S; /**< lstm_model_t.X + lstm_model_t.N */
 
-  // Parameters
-  lstm_model_parameters_t * params;
+  // lstm output probability vector 
+  double* probs; 
 
-  // The model
+  // Parameters
+  lstm_model_parameters * params;
+
+  // The model 
   double* Wf;
   double* Wi;
   double* Wc;
@@ -70,6 +73,10 @@ typedef struct lstm_model_t
   double* bc;
   double* bo;
   double* by;
+
+  // The model State
+  // double** c;
+  // double** h;
 
   // cache
   double* dldh;
@@ -96,41 +103,44 @@ typedef struct lstm_model_t
   double* bom;
   double* bym;
 
-} lstm_model_t;
+} lstm_rnn;
 
-typedef struct lstm_values_cache_t {
-  double* probs;
-  double* c;
-  double* h;
+typedef struct lstm_values_cache {
   double* c_old;
   double* h_old;
+  double* c;
+  double* h;
   double* X;
   double* hf;
   double* hi;
   double* ho;
   double* hc;
   double* tanh_c_cache;
-} lstm_values_cache_t;
-
-typedef struct lstm_values_state_prev {
-  double* c_prev;
-  double* h_prev;
-} lstm_values_state_prev;
-
-int lstm_init_model(int X, int N, int Y, lstm_model_t* lstm, int zeros, 
-lstm_model_parameters_t *params);
-
-void lstm_free_model(lstm_model_t *lstm);
-
-void lstm_forward_propagate(lstm_model_t* model, double *input, 
-double *h_prev, double *c_prev , lstm_values_cache_t* cache_out);
-
-lstm_values_cache_t*  lstm_cache_container_init(int X, int N, int Y);
+} lstm_values_cache;
 
 
-void lstm_cache_container_free(lstm_values_cache_t* cache_to_be_freed);
+int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros, 
+lstm_model_parameters *params);
 
-void lstm_free_model(lstm_model_t* lstm);
+void lstm_free_model(lstm_rnn *lstm);
+
+void lstm_forward(lstm_rnn* model, int *x , double *h_prev, double *c_prev ,
+lstm_values_cache** cache, Data *data);
+
+lstm_values_cache*  lstm_cache_container_init(int X, int N, int Y);
+
+void lstm_cache_container_free(lstm_values_cache* cache_to_be_freed);
+
+void lstm_backforward(lstm_rnn* model , int y_correct, int l,
+lstm_values_cache** cache_in, lstm_rnn* gradients);
+
+float lstm_forward_bacforward(lstm_rnn* lstm, lstm_values_cache **cache_layers, Data *data);
+
+void lstm_free_model(lstm_rnn* lstm);
+
+void lstm_zero_the_model(lstm_rnn *model);
+
+void gradients_decend(lstm_rnn* model, lstm_rnn* gradients);
 
 
 #endif

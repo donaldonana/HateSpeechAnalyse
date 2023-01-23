@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "utils.h"
+#include "simplernn.h"
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
@@ -94,7 +95,7 @@ int main(int argc, char **argv)
     void *status;
     int r;
 
-    printf("\n----Thread create phase start---- \n");
+    printf("\n----Thread create phase start---- \n"); 
     /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);

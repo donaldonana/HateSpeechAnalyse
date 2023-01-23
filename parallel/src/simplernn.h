@@ -5,21 +5,6 @@
 #include "utils.h"
 
 
-typedef struct Data Data;
-struct Data
-{
-	int xraw;
-	int xcol;
-	int ecol;
-    int eraw;
-	int start_val;
-	int end_val;
-	int **X;
-    int *Y;
-    float **embedding;
-
-};
-
 
 typedef struct SimpleRNN SimpleRNN;
 struct SimpleRNN
@@ -92,7 +77,6 @@ void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
 
-void get_data(Data *data, int nthread);
 
 void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr);
 

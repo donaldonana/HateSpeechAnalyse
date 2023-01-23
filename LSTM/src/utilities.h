@@ -34,6 +34,35 @@
 #include <stdio.h>
 #include <limits.h>
 
+
+
+typedef struct Data Data;
+struct Data
+{
+	int xraw;
+	int xcol;
+	int ecol;
+    int eraw;
+	int start_val;
+	int end_val;
+	int **X;
+    int *Y;
+    double **embedding;
+
+};
+
+void get_data(Data *data);
+
+float binary_loss_entropy(int y_correct , double *y_pred) ;
+
+double **allocate_dynamic_float_matrix(int row, int col);
+
+int **allocate_dynamic_int_matrix(int row, int col);
+
+void deallocate_dynamic_float_matrix(float **matrix, int row);
+
+void deallocate_dynamic_int_matrix(int **matrix, int row);
+
 // used on contigous vectors
 //		A = A + B		A,		B,    l
 void 	vectors_add(double*, double*, int);
@@ -71,6 +100,7 @@ double** 	get_zero_matrix(int, int);
 double** 	get_random_matrix(int, int);
 double* 	get_random_vector(int,int);
 
+void  set_vector_zero(double* A, int N);
 void 	matrix_set_to_zero(double**, int, int);
 void 	vector_set_to_zero(double*, int);
 
@@ -95,5 +125,16 @@ void 	vector_store_ascii(double *, int, FILE *);
 // Memory
 void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();
+
+
+
+/* uniform distribution, (0..1] */
+float drand()   ;
+
+
+/* normal distribution, centered on 0, std dev 1 */
+float random_normal() ;
+
+
 #endif
 

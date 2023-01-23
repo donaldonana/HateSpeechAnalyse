@@ -37,7 +37,7 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int
         acc = acc/index;
 		lost_list[e] = loss;
 		acc_list[e]  = acc ;
-        printf("--> Loss : %f  accuracy : %f \n" , loss, acc);    
+        printf("--> Loss : %f  accuracy : %f \n" , loss, acc);    	
         if (rounded_float(loss) < rounded_float(best_lost))
         {
             best_lost = loss;  
@@ -135,7 +135,6 @@ DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
 		
 	}
 
-	// Parameters Update  with SGD  o = o - lr*do
 	 add_matrix(grnn->d_Whx, grnn->d_Whx, drnn->dWhx, rnn->input_size, rnn->hidden_size);
 	 add_matrix(grnn->d_Whh, grnn->d_Whh, drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
 	 add_matrix(grnn->d_Why, grnn->d_Why, drnn->dWhy, rnn->hidden_size, rnn->output_size);

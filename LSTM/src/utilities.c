@@ -12,6 +12,83 @@
 */
 #include "utilities.h"
 
+
+
+
+void get_data(Data *data){
+
+  double a;
+	int b ;
+    FILE *fin = NULL;
+    FILE *file = NULL;
+	FILE *stream = NULL;
+    fin = fopen("../python/data.txt" , "r");
+    if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
+    if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
+    file = fopen("../python/embedding.txt" , "r");
+	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
+    if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
+
+	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
+	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
+	data->Y = malloc(sizeof(int)*(data->xraw));
+	// embeddind matrix
+	if (file != NULL)
+    {
+		for (int i = 0; i < data->eraw; i++)
+		{
+			for (int j = 0; j < data->ecol; j++)
+			{
+				if(fscanf(file, "%lf" , &a)){
+				data->embedding[i][j] = a;
+				}
+			}
+			
+		}
+    }
+	// X matrix
+	if (fin != NULL)
+    {
+		 
+		for ( int i = 0; i < data->xraw; i++)
+		{
+			for ( int j = 0; j < data->xcol; j++)
+			{
+				if(fscanf(fin, "%d" , &b)){
+				data->X[i][j] = b;
+				}
+			}
+
+		}
+
+    }
+	// Y vector
+    stream = fopen("../python/label.txt" , "r");
+    if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
+	if (stream != NULL)
+    {
+        int count = 0;
+  		if (stream == NULL) {
+    	fprintf(stderr, "Error reading file\n");
+  		}
+  		while (fscanf(stream, "%d", &data->Y[count]) == 1) {
+      	count = count+1;
+  		}
+    }
+
+	data->start_val = data->xraw * 0.7 ;
+	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
+	printf(" Train data from index 1 to index %d  \n " , data->start_val);
+	printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
+	printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+
+	fclose(fin);
+	fclose(file);
+	fclose(stream);
+
+}
+
+
 // used on contigous vectors
 void  vectors_add(double* A, double* B, int L)
 {
@@ -81,7 +158,7 @@ void  vectors_substract_scalar_multiply(double* A, double* B, int L, double s)
 {
   int l = 0;
   while ( l < L ) {
-    A[l] -= B[l] * s;
+    A[l] -= B[l]*s;
     ++l;
   }
 }
@@ -136,7 +213,7 @@ double*   get_random_vector(int L, int R) {
   p = e_calloc(L, sizeof(double));
 
   while ( l < L ) {
-    p[l] = randn(0,1) / sqrt( R / 5 );
+    p[l] = random_normal()/10;
     ++l;
   }
 
@@ -274,6 +351,15 @@ void  copy_vector(double* A, double* B, int L)
     A[l] = B[l];
     ++l;
   }
+}
+
+void  set_vector_zero(double* A, int N)
+{
+  for (int i = 0; i < N; i++)
+  {
+    A[i] = 0.0 ;
+  }
+  
 }
 
 void  matrix_add(double** A, double** B, int R, int C)
@@ -653,3 +739,109 @@ size_t  e_alloc_total()
 {
   return alloc_mem_tot;
 }
+
+
+
+
+double **allocate_dynamic_float_matrix(int row, int col)
+{
+    double **ret_val;
+    int i;
+
+    ret_val = malloc(sizeof(double *) * row);
+    if (ret_val == NULL)
+    {
+        perror("memory allocation failure");
+        exit(EXIT_FAILURE);
+    }
+
+    for (i = 0; i < row; ++i)
+    {
+        ret_val[i] = malloc(sizeof(double) * col);
+        if (ret_val[i] == NULL)
+        {
+            perror("memory allocation failure");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return ret_val;
+}
+
+
+int **allocate_dynamic_int_matrix(int row, int col)
+{
+    int **ret_val;
+    int i;
+
+    ret_val = malloc(sizeof(int *) * row);
+    if (ret_val == NULL)
+    {
+        perror("memory allocation failure");
+        exit(EXIT_FAILURE);
+    }
+
+    for (i = 0; i < row; ++i)
+    {
+        ret_val[i] = malloc(sizeof(int) * col);
+        if (ret_val[i] == NULL)
+        {
+            perror("memory allocation failure");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return ret_val;
+}
+
+
+void deallocate_dynamic_float_matrix(float **matrix, int row)
+{
+    int i;
+
+    for (i = 0; i < row; ++i)
+    {
+        free(matrix[i]);
+		matrix[i] = NULL;
+    }
+    free(matrix);
+}
+
+void deallocate_dynamic_int_matrix(int **matrix, int row)
+{
+
+    int i;
+
+    for (i = 0; i < row; ++i)
+    {
+        free(matrix[i]);
+		matrix[i] = NULL;
+    }
+    free(matrix);
+
+}
+
+
+float binary_loss_entropy(int y_correct , double *y_pred) {
+
+    float loss;
+
+    loss = -1*log(y_pred[y_correct]);
+
+    return loss ;
+}
+
+
+/* uniform distribution, (0..1] */
+float drand()   
+{
+  return (rand()+1.0)/(RAND_MAX+1.0);
+}
+
+/* normal distribution, centered on 0, std dev 1 */
+float random_normal() 
+{
+  return sqrt(-2*log(drand())) * cos(2*M_PI*drand());
+}
+
+

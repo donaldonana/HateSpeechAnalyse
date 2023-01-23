@@ -34,7 +34,7 @@
 
 #define NEURONS                                                 68
 
-#define STD_LEARNING_RATE                                       0.001
+#define STD_LEARNING_RATE                                       0.01
 #define STD_MOMENTUM                                            0.0
 #define STD_LAMBDA                                              0.05
 #define SOFTMAX_TEMP                                            1.0

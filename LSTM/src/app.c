@@ -13,7 +13,7 @@
 #define ITERATIONS  100000000
 #define NO_EPOCHS   0 
 
- lstm_model_parameters_t params;
+ lstm_model_parameters params;
 
 int main()
 {
@@ -23,7 +23,7 @@ int main()
   params.iterations = ITERATIONS;
   params.epochs = NO_EPOCHS;
   params.loss_moving_avg = LOSS_MOVING_AVG;
-  params.learning_rate = STD_LEARNING_RATE;
+  params.learning_rate = 0.01;
   params.momentum = STD_MOMENTUM;
   params.lambda = STD_LAMBDA;
   params.softmax_temp = SOFTMAX_TEMP;
@@ -40,38 +40,72 @@ int main()
   params.optimizer = OPTIMIZE_ADAM;
 
 
-  int X = 2;
-  int N = 64;
-  int Y = 2; 
-  double tab[2] = {0,1};
-  lstm_model_t* lstm = e_calloc(1, sizeof(lstm_model_t));
+
+  Data *data  = malloc(sizeof(Data));
+  get_data(data);
+
+  int X = data->ecol;
+  int N = 64, Y = 2, t;
+  int epoch = 15 ;
+  float Loss;
+
+  lstm_rnn* lstm = e_calloc(1, sizeof(lstm_rnn));
+  lstm_rnn* gradient = e_calloc(1, sizeof(lstm_rnn) );
   lstm_init_model(X, N, Y , lstm, 0, &params); 
+  lstm_init_model(X, N, Y , gradient , 1, &params);
 
-  lstm_values_cache_t **cache_layers = e_calloc(X, sizeof(lstm_values_cache_t));
-
-  double *h_prev = get_zero_vector(N);
-  double *c_prev = get_zero_vector(N);
-
-  for (int t = 0; t < X; t++)
+  lstm_values_cache **cache = malloc((data->xcol+1)*sizeof(lstm_values_cache));
+  for (t = 0; t < X; t++)
   {
-    cache_layers[t] = lstm_cache_container_init(X, N, Y);
-    lstm_forward_propagate(lstm, tab, h_prev, c_prev, cache_layers[t]);
-    copy_vector(h_prev, cache_layers[t]->h, N);
-    copy_vector(c_prev, cache_layers[t]->c, N);
-
-    for (int i = 0; i < Y; i++)
-    {
-      printf("\n %lf " , cache_layers[t]->probs[i]);
-      printf(" , %lf " , cache_layers[t]->probs[i]);
-
-    }
-    
-
+    cache[t] = lstm_cache_container_init(X, N, Y);
   }
-  
-  
-  lstm_free_model(lstm);
+  double *h_prev = get_zero_vector(lstm->N);
+  double *c_prev = get_zero_vector(lstm->N);
 
+
+  
+  for (int e = 0; e < epoch ; e++)
+  {
+
+    Loss = 0.0;
+    printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
+     
+    for (int i = 0; i < 1000; i++)
+    {
+      // forward
+      lstm_forward(lstm, data->X[i], h_prev, c_prev, cache, data);
+      Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs);
+
+      // backforward
+      lstm_backforward(lstm, data->Y[i], (data->xcol-1), cache, gradient);
+      // update
+      gradients_decend(lstm, gradient);
+
+      lstm_zero_the_model(gradient);
+      set_vector_zero(h_prev, N);
+      set_vector_zero(c_prev, N);
+    }
+    Loss = Loss/1000;
+    printf("%lf \n" , Loss);    
+
+
+  
+  }
+
+  // for (int  i = 0; i < N; i++)
+  // {
+  //   printf("%lf \n" , gradient->bf[i]);    
+
+  // }
+  
+
+  // for (int i = 0; i < Y*N; i++)
+  // {
+  //   printf("\n %d ---%lf ", i, gradient->Wy[i]);
+  // }
+  // printf("\n +++++ %lf +++++", cache_layers[0]->h[0]);
+  
+
+  lstm_free_model(lstm);
   printf("\n initialization finish. \n");
-   
 }

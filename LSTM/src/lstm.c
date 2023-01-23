@@ -5,16 +5,17 @@
 
 // Inputs, Neurons, Outputs, &lstm model, zeros
 int lstm_init_model(int X, int N, int Y, 
- lstm_model_t* lstm,  int zeros, lstm_model_parameters_t *params)
+lstm_rnn* lstm, int zeros, lstm_model_parameters *params)
 {
   int S = X + N;
-
-  lstm->X = X;
-  lstm->N = N;
-  lstm->S = S;
-  lstm->Y = Y;
+  lstm->X = X; /**< Number of input nodes */
+  lstm->N = N; /**< Number of neurons in the hiden layers */
+  lstm->S = S; /**< lstm_model_t.X + lstm_model_t.N */
+  lstm->Y = Y; /**< Number of output nodes */
 
   lstm->params = params;
+
+  lstm->probs = get_zero_vector(Y);
 
   if ( zeros ) {
     lstm->Wf = get_zero_vector(N * S);
@@ -61,11 +62,16 @@ int lstm_init_model(int X, int N, int Y,
   lstm->bom = get_zero_vector(N);
   lstm->bym = get_zero_vector(Y);
 
+//   lstm->h   = allocate_dynamic_float_matrix(100, N);
+//   lstm->c   = allocate_dynamic_float_matrix(100, N);
+
   return 0;
 }
 
-void lstm_free_model(lstm_model_t* lstm)
+void lstm_free_model(lstm_rnn* lstm)
 {
+
+  free_vector(&(lstm)->probs);
   free_vector(&lstm->Wf);
   free_vector(&lstm->Wi);
   free_vector(&lstm->Wc);
@@ -102,24 +108,22 @@ void lstm_free_model(lstm_model_t* lstm)
   free_vector(&lstm->bom);
   free_vector(&lstm->bym);
 
+//   deallocate_dynamic_float_matrix(lstm->c, 100);
+//   deallocate_dynamic_float_matrix(lstm->h, 100);
+
   free(lstm);
 }
 
-
-
 // model, input, state and cache values, &probs, whether or not to apply softmax
-void lstm_forward_propagate(lstm_model_t* model, double *input, 
-double *h_prev, double *c_prev , lstm_values_cache_t* cache_out)
+void lstm_forward(lstm_rnn* model, int *x , double *h_prev, double *c_prev , 
+lstm_values_cache** cache, Data *data)
 {
-  int N, Y, S, i = 0;
-  double *h_old, *c_old, *X_one_hot;
 
-  h_old = h_prev ;
-  c_old = c_prev ;
-
+  int N, S, i , n, t = 0 ;
+  double  *X_one_hot;
   N = model->N;
-  Y = model->Y;
   S = model->S;
+  n = (data->xcol - 1) ;
 
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
@@ -127,66 +131,150 @@ double *h_prev, double *c_prev , lstm_values_cache_t* cache_out)
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
-
-
-  X_one_hot = cache_out->X;
-
-  while ( i < S ) {
-    if ( i < N ) {
-      X_one_hot[i] = h_old[i];
-    } else {
-      X_one_hot[i] = input[i - N];
-    }
-    ++i;
-  }
-
-  // Fully connected + sigmoid layers 
-  fully_connected_forward(cache_out->hf, model->Wf, X_one_hot, model->bf, N, S);
-  sigmoid_forward(cache_out->hf, cache_out->hf, N);
-
-  fully_connected_forward(cache_out->hi, model->Wi, X_one_hot, model->bi, N, S);
-  sigmoid_forward(cache_out->hi, cache_out->hi, N);
-
-  fully_connected_forward(cache_out->ho, model->Wo, X_one_hot, model->bo, N, S);
-  sigmoid_forward(cache_out->ho, cache_out->ho, N);
-
-  fully_connected_forward(cache_out->hc, model->Wc, X_one_hot, model->bc, N, S);
-  tanh_forward(cache_out->hc, cache_out->hc, N);
-
-  // c = hf * c_old + hi * hc
-  copy_vector(cache_out->c, cache_out->hf, N);
-  vectors_multiply(cache_out->c, c_old, N);
-  copy_vector(tmp, cache_out->hi, N);
-  vectors_multiply(tmp, cache_out->hc, N);
-  vectors_add(cache_out->c, tmp, N);
-
-  // h = ho * tanh_c_cache
-  tanh_forward(cache_out->tanh_c_cache, cache_out->c, N);
-  copy_vector(cache_out->h, cache_out->ho, N);
-  vectors_multiply(cache_out->h, cache_out->tanh_c_cache, N);
-
-  // probs = softmax ( Wy*h + by )
-  fully_connected_forward(cache_out->probs, model->Wy, cache_out->h, model->by, Y, N);
-  softmax_layers_forward(cache_out->probs, cache_out->probs, Y, model->params->softmax_temp);
-
-
-  copy_vector(cache_out->X, X_one_hot, S);
-
-
  
-  free_vector(&tmp);
+    
+  for (t = 0; t <= n ; t++)
+  {
 
+    i = 0 ;
+    X_one_hot = cache[t]->X;
+    while ( i < S ) {
+      if ( i < N ) {
+        X_one_hot[i] = h_prev[i];
+      } else  {
+        X_one_hot[i] = data->embedding[x[t]][i-N];
+      }
+      ++i;
+    }
+
+    // Fully connected + sigmoid layers 
+    fully_connected_forward(cache[t]->hf, model->Wf, X_one_hot, model->bf, N, S); 
+    sigmoid_forward(cache[t]->hf, cache[t]->hf, N);
+    
+    fully_connected_forward(cache[t]->hi, model->Wi, X_one_hot, model->bi, N, S);
+    sigmoid_forward(cache[t]->hi, cache[t]->hi, N);
+
+    fully_connected_forward(cache[t]->ho, model->Wo, X_one_hot, model->bo, N, S);
+    sigmoid_forward(cache[t]->ho, cache[t]->ho, N);
+
+    fully_connected_forward(cache[t]->hc, model->Wc, X_one_hot, model->bc, N, S);
+    tanh_forward(cache[t]->hc, cache[t]->hc, N);
+
+    // c = hf * c_old + hi * hc
+    copy_vector(cache[t]->c, cache[t]->hf, N);
+    vectors_multiply(cache[t]->c, c_prev, N);
+    copy_vector(tmp, cache[t]->hi, N);
+    vectors_multiply(tmp, cache[t]->hc, N);
+    vectors_add(cache[t]->c, tmp, N);
+
+    // h = ho * tanh_c_cache
+    tanh_forward(cache[t]->tanh_c_cache, cache[t]->c, N);
+    copy_vector(cache[t]->h, cache[t]->ho, N);
+    vectors_multiply(cache[t]->h, cache[t]->tanh_c_cache, N);
+
+    copy_vector(cache[t]->c_old, c_prev, N);
+    copy_vector(cache[t]->h_old, h_prev, N);
+    copy_vector(c_prev, cache[t]->c, N);
+    copy_vector(h_prev, cache[t]->h, N);
+
+  }
+  
+  // probs = softmax ( Wy*h + by )
+  fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
+  softmax_layers_forward(model->probs, model->probs, model->Y, model->params->softmax_temp);
+  
+  free_vector(&tmp);
 
 }
 
 
-lstm_values_cache_t*  lstm_cache_container_init(int X, int N, int Y)
+//	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
+void lstm_backforward(lstm_rnn* model, int y_correct, int n,
+lstm_values_cache** cache, lstm_rnn* gradients)
+{
+ 
+  lstm_values_cache* cache_in = NULL;
+  double *dldh, *dldy, *dldho, *dldhf, *dldhi, *dldhc, *dldc;
+  int N, Y, S;
+  
+  N = model->N;
+  Y = model->Y;
+  S = model->S;
+
+  double *bias = malloc(N*sizeof(double));
+  double *weigth = malloc((N*S)*sizeof(double));
+
+  // model cache
+  dldh = model->dldh;
+  dldc = model->dldc;
+  dldho = model->dldho;
+  dldhi = model->dldhi;
+  dldhf = model->dldhf;
+  dldhc = model->dldhc;
+  dldy = model->probs;
+
+  if ( y_correct >= 0 ) {
+    dldy[y_correct] -= 1.0;
+  }
+  
+  fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
+  copy_vector(dldc, dldh, N);
+  vectors_multiply(dldc, cache[n]->ho , N);
+  tanh_backward(dldc, cache[n]->tanh_c_cache, dldc, N);
+
+  for (int t = n ; t >= 0; t--)
+  {
+    cache_in = cache[t];
+
+    copy_vector(dldho, dldh, N);
+    vectors_multiply(dldho, cache_in->tanh_c_cache, N);
+    sigmoid_backward(dldho, cache_in->ho, dldho, N);
+
+    copy_vector(dldhf, dldc, N);
+    vectors_multiply(dldhf, cache_in->c_old, N);
+    sigmoid_backward(dldhf, cache_in->hf, dldhf, N);
+
+    copy_vector(dldhi, cache_in->hc, N);
+    vectors_multiply(dldhi, dldc, N);
+    sigmoid_backward(dldhi, cache_in->hi, dldhi, N);
+
+    copy_vector(dldhc, cache_in->hi, N);
+    vectors_multiply(dldhc, dldc, N);
+    tanh_backward(dldhc, cache_in->hc, dldhc, N);
+
+    fully_connected_backward(dldhi, model->Wi, cache_in->X, weigth, gradients->dldXi, bias, N, S);
+    vectors_add(gradients->Wi, weigth, N*S);
+    vectors_add(gradients->bi, bias, N);
+    fully_connected_backward(dldhc, model->Wc, cache_in->X, weigth, gradients->dldXc, bias, N, S);
+    vectors_add(gradients->Wc, weigth, N*S);
+    vectors_add(gradients->bc, bias, N);
+    fully_connected_backward(dldho, model->Wo, cache_in->X, weigth, gradients->dldXo, bias, N, S);
+    vectors_add(gradients->Wo, weigth, N*S);
+    vectors_add(gradients->bo, bias, N);
+    fully_connected_backward(dldhf, model->Wf, cache_in->X, weigth, gradients->dldXf, bias, N, S);
+    vectors_add(gradients->Wf, weigth, N*S);
+    vectors_add(gradients->bf, bias, N);
+
+    // dldXi will work as a temporary substitute for dldX (where we get extract dh_next from!)
+    vectors_add(gradients->dldXi, gradients->dldXc, S);
+    vectors_add(gradients->dldXi, gradients->dldXo, S);
+    vectors_add(gradients->dldXi, gradients->dldXf, S);
+    copy_vector(dldh, gradients->dldXi, N);
+
+    vectors_multiply(dldc, cache_in->hf, N);
+
+  }
+   
+  free_vector(&bias);
+  free_vector(&weigth);
+}
+
+
+
+lstm_values_cache*  lstm_cache_container_init(int X, int N, int Y)
 {
   int S = N + X;
-
-  lstm_values_cache_t* cache = e_calloc(1, sizeof(lstm_values_cache_t));
-
-  cache->probs = get_zero_vector(Y);
+  lstm_values_cache* cache = e_calloc(1, sizeof(lstm_values_cache));
   cache->c = get_zero_vector(N);
   cache->h = get_zero_vector(N);
   cache->c_old = get_zero_vector(N);
@@ -198,13 +286,12 @@ lstm_values_cache_t*  lstm_cache_container_init(int X, int N, int Y)
   cache->hc = get_zero_vector(N);
   cache->tanh_c_cache = get_zero_vector(N);
 
-
   return cache;
 }
 
-void lstm_cache_container_free(lstm_values_cache_t* cache_to_be_freed)
+
+void lstm_cache_container_free(lstm_values_cache* cache_to_be_freed)
 {
-  free_vector(&(cache_to_be_freed)->probs);
   free_vector(&(cache_to_be_freed)->c);
   free_vector(&(cache_to_be_freed)->h);
   free_vector(&(cache_to_be_freed)->c_old);
@@ -218,5 +305,85 @@ void lstm_cache_container_free(lstm_values_cache_t* cache_to_be_freed)
 }
 
 
+// A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
+void gradients_decend(lstm_rnn* model, lstm_rnn* gradients) {
+
+  // Computing momumentum * m
+  // vectors_mutliply_scalar(gradients->Wym, model->params->momentum, model->Y * model->N);
+  // vectors_mutliply_scalar(gradients->Wim, model->params->momentum, model->N * model->S);
+  // vectors_mutliply_scalar(gradients->Wcm, model->params->momentum, model->N * model->S);
+  // vectors_mutliply_scalar(gradients->Wom, model->params->momentum, model->N * model->S);
+  // vectors_mutliply_scalar(gradients->Wfm, model->params->momentum, model->N * model->S);
+
+  // vectors_mutliply_scalar(gradients->bym, model->params->momentum, model->Y);
+  // vectors_mutliply_scalar(gradients->bim, model->params->momentum, model->N);
+  // vectors_mutliply_scalar(gradients->bcm, model->params->momentum, model->N);
+  // vectors_mutliply_scalar(gradients->bom, model->params->momentum, model->N);
+  // vectors_mutliply_scalar(gradients->bfm, model->params->momentum, model->N);
+
+  // // Computing m = momentum * m + (1 - momentum) * dldA
+  // vectors_add_scalar_multiply(gradients->Wym, gradients->Wy, model->Y * model->N, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->Wim, gradients->Wi, model->N * model->S, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->Wcm, gradients->Wc, model->N * model->S, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->Wom, gradients->Wo, model->N * model->S, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->Wfm, gradients->Wf, model->N * model->S, 1.0 - model->params->momentum);
+
+  // vectors_add_scalar_multiply(gradients->bym, gradients->by, model->Y, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->bim, gradients->bi, model->N, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->bcm, gradients->bc, model->N, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->bom, gradients->bo, model->N, 1.0 - model->params->momentum);
+  // vectors_add_scalar_multiply(gradients->bfm, gradients->bf, model->N, 1.0 - model->params->momentum);
+
+  // Computing A = A - alpha * m
+  vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->Wi, gradients->Wi, model->N * model->S, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->Wc, gradients->Wc, model->N * model->S, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->Wo, gradients->Wo, model->N * model->S, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->Wf, gradients->Wf, model->N * model->S, model->params->learning_rate);
+
+  vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->bi, gradients->bi, model->N, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->bc, gradients->bc, model->N, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->bf, gradients->bf, model->N, model->params->learning_rate);
+  vectors_substract_scalar_multiply(model->bo, gradients->bo, model->N, model->params->learning_rate);
+}
 
 
+void lstm_zero_the_model(lstm_rnn * model)
+{
+  vector_set_to_zero(model->Wy, model->Y * model->N);
+  vector_set_to_zero(model->Wi, model->N * model->S);
+  vector_set_to_zero(model->Wc, model->N * model->S);
+  vector_set_to_zero(model->Wo, model->N * model->S);
+  vector_set_to_zero(model->Wf, model->N * model->S);
+
+  vector_set_to_zero(model->by, model->Y);
+  vector_set_to_zero(model->bi, model->N);
+  vector_set_to_zero(model->bc, model->N);
+  vector_set_to_zero(model->bf, model->N);
+  vector_set_to_zero(model->bo, model->N);
+
+  vector_set_to_zero(model->Wym, model->Y * model->N);
+  vector_set_to_zero(model->Wim, model->N * model->S);
+  vector_set_to_zero(model->Wcm, model->N * model->S);
+  vector_set_to_zero(model->Wom, model->N * model->S);
+  vector_set_to_zero(model->Wfm, model->N * model->S);
+
+  vector_set_to_zero(model->bym, model->Y);
+  vector_set_to_zero(model->bim, model->N);
+  vector_set_to_zero(model->bcm, model->N);
+  vector_set_to_zero(model->bfm, model->N);
+  vector_set_to_zero(model->bom, model->N);
+
+  vector_set_to_zero(model->dldhf, model->N);
+  vector_set_to_zero(model->dldhi, model->N);
+  vector_set_to_zero(model->dldhc, model->N);
+  vector_set_to_zero(model->dldho, model->N);
+  vector_set_to_zero(model->dldc, model->N);
+  vector_set_to_zero(model->dldh, model->N);
+
+  vector_set_to_zero(model->dldXc, model->S);
+  vector_set_to_zero(model->dldXo, model->S);
+  vector_set_to_zero(model->dldXi, model->S);
+  vector_set_to_zero(model->dldXf, model->S);
+}

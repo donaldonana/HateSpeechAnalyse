@@ -8,52 +8,7 @@
 #include "simplernn.h"
 
 
-
-
-void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int index){
-
-	double time;
-    clock_t start, end ;
-    float loss , acc , best_lost = 4000.0  ;
-	float *lost_list = malloc(sizeof(float)*epoch);
-	float *acc_list  = malloc(sizeof(float)*epoch);
-	dSimpleRNN *grnn = malloc(sizeof(dSimpleRNN));
-	initialize_rnn_gradient(rnn, grnn);
-
-    start = clock();
-    for (int e = 0; e < epoch ; e++)
-    {
-        loss = acc = 0.0;
-        printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-        for (int i = 0; i < index; i++)
-        {
-            forward(rnn, data->X[i], data->xcol , data->embedding);
-            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, grnn);
-            gradient_descent(rnn, grnn, 1, 0.01);
-	    loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
-            acc = accuracy(acc , data->Y[i], rnn->y);
-        }
-        loss = loss/index;
-        acc = acc/index;
-		lost_list[e] = loss;
-		acc_list[e]  = acc ;
-        printf("--> Loss : %f  accuracy : %f \n" , loss, acc);    
-        if (rounded_float(loss) < rounded_float(best_lost))
-        {
-            best_lost = loss;  
-			FILE *fichier = fopen("SimpleRnn.json", "w");
-    		save_rnn_as_json(rnn, fichier);
-			fclose(fichier);
-        }
-         
-    }
-    end = clock();
-    time = (double)(end - start) / CLOCKS_PER_SEC;
-    printf("\nTRAINING PHASE END IN %lf s\n" , time);
-    printf("\n BEST LOST IS %lf : \n" , best_lost);
  
-}
-
 float testing(SimpleRNN *rnn, Data *data, int start, int end){
 
 	float Loss = 0 ;
@@ -336,82 +291,5 @@ add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
 }
 
 
-
-
-void get_data(Data *data, int nthread){
-
-    float a;
-	int b ;
-    FILE *fin = NULL;
-    FILE *file = NULL;
-	FILE *stream = NULL;
-    fin = fopen("../python/data.txt" , "r");
-    if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
-    if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
-    file = fopen("../python/embedding.txt" , "r");
-	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
-    if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
-
-	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
-	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
-	data->Y = malloc(sizeof(int)*(data->xraw));
-	// embeddind matrix
-	if (file != NULL)
-    {
-		for (int i = 0; i < data->eraw; i++)
-		{
-			for (int j = 0; j < data->ecol; j++)
-			{
-				if(fscanf(file, "%f" , &a)){
-				data->embedding[i][j] = a;
-				}
-			}
-			
-		}
-    }
-	// X matrix
-	if (fin != NULL)
-    {
-		 
-		for ( int i = 0; i < data->xraw; i++)
-		{
-			for ( int j = 0; j < data->xcol; j++)
-			{
-				if(fscanf(fin, "%d" , &b)){
-				data->X[i][j] = b;
-				}
-			}
-
-		}
-
-    }
-	// Y vector
-    stream = fopen("../python/label.txt" , "r");
-    if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
-	if (stream != NULL)
-    {
-        int count = 0;
-  		if (stream == NULL) {
-    	fprintf(stderr, "Error reading file\n");
-  		}
-  		while (fscanf(stream, "%d", &data->Y[count]) == 1) {
-      	count = count+1;
-  		}
-    }
-
-	data->start_val = data->xraw * 0.7 ;
-	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
-	printf(" Train data from index 1 to index %d  \n " , data->start_val);
-	printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
-	printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
-
-	fclose(fin);
-	fclose(file);
-	fclose(stream);
-
-
-}
-
- 
 
 

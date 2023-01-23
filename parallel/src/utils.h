@@ -3,12 +3,28 @@
 #ifndef DEF_UTILS
 #define DEF_UTILS
 
-#include "simplernn.h"
 
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
  
+
+
+typedef struct Data Data;
+struct Data
+{
+	int xraw;
+	int xcol;
+	int ecol;
+    int eraw;
+	int start_val;
+	int end_val;
+	int **X;
+    int *Y;
+    float **embedding;
+
+};
+
 
 
 
@@ -74,8 +90,9 @@ void matrix_strore_as_json(float **m, int row, int col, FILE *fo);
 
 void copy_mat(float **a, float **b, int row ,int col);
 
- 
-
 int ArgMax( float *y_pred);
+
+void get_data(Data *data, int nthread);
+
 
 #endif

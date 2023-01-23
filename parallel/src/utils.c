@@ -12,8 +12,6 @@
 
 #include "utils.h"
 
-
-
 /* uniform distribution, (0..1] */
 float drand()   
 {
@@ -32,7 +30,6 @@ float rounded_float(float val){
 
 }
 
-
 void mat_mul(float *r, float* a, float** b, int n, int p) {
     // matrix a of size 1 x n (array)
     // matrix b of size n x p
@@ -45,7 +42,6 @@ void mat_mul(float *r, float* a, float** b, int n, int p) {
         for (k = 0; k < n; k++) {
 
             r[j] += (a[k] * b[k][j]);
-
 
 		}
     }
@@ -444,5 +440,82 @@ void data_for_plot(char *filename, int epoch, float *axis, char *axis_name){
 		printf("Impossible d'ouvrir le fichier test.txt");
 	}
 }
+
+
+
+void get_data(Data *data, int nthread){
+
+    float a;
+	int b ;
+    FILE *fin = NULL;
+    FILE *file = NULL;
+	FILE *stream = NULL;
+    fin = fopen("../python/data.txt" , "r");
+    if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
+    if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
+    file = fopen("../python/embedding.txt" , "r");
+	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
+    if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
+
+	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
+	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
+	data->Y = malloc(sizeof(int)*(data->xraw));
+	// embeddind matrix
+	if (file != NULL)
+    {
+		for (int i = 0; i < data->eraw; i++)
+		{
+			for (int j = 0; j < data->ecol; j++)
+			{
+				if(fscanf(file, "%f" , &a)){
+				data->embedding[i][j] = a;
+				}
+			}
+			
+		}
+    }
+	// X matrix
+	if (fin != NULL)
+    {
+		 
+		for ( int i = 0; i < data->xraw; i++)
+		{
+			for ( int j = 0; j < data->xcol; j++)
+			{
+				if(fscanf(fin, "%d" , &b)){
+				data->X[i][j] = b;
+				}
+			}
+
+		}
+
+    }
+	// Y vector
+    stream = fopen("../python/label.txt" , "r");
+    if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
+	if (stream != NULL)
+    {
+        int count = 0;
+  		if (stream == NULL) {
+    	fprintf(stderr, "Error reading file\n");
+  		}
+  		while (fscanf(stream, "%d", &data->Y[count]) == 1) {
+      	count = count+1;
+  		}
+    }
+
+	data->start_val = data->xraw * 0.7 ;
+	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
+	printf(" Train data from index 1 to index %d  \n " , data->start_val);
+	printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
+	printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+
+	fclose(fin);
+	fclose(file);
+	fclose(stream);
+
+}
+
+ 
 
  
