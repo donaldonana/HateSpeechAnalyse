@@ -11,10 +11,12 @@
 int main()
 {
   srand(time(NULL));
+
   Data *data = malloc(sizeof(Data));
   get_data(data);
   int mini_batch = 32;
   int epoch = 20;
+  float lr = 0.01 ;
   
   SimpleRNN *rnn = malloc(sizeof(SimpleRNN));
   DerivedSimpleRNN *drnn = malloc(sizeof(DerivedSimpleRNN));
@@ -24,7 +26,8 @@ int main()
   initialize_rnn_derived(rnn , drnn);
   initialize_rnn_gradient(rnn, grnn);
 
-  training(20, rnn, drnn, grnn, data, 10000, mini_batch) ;
+  print_summary(rnn, epoch, mini_batch, lr);
+  training(epoch, rnn, drnn, grnn, data, 1000, mini_batch) ;
 
   // printf("\n ******************* TEST PHASE START *******************\n");
   // testing(rnn, data, datadim, embedding_matrix, train, target);

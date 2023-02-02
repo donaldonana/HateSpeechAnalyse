@@ -67,6 +67,8 @@ void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matri
 
 float accuracy(float acc, float y, float *y_pred);
 
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr);
+
 void dhraw(float *dhraw, float *lasth, float *dh, int n);
 
 void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);

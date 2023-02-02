@@ -14,6 +14,8 @@ struct timeval start_t , end_t ;
 
 void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, dSimpleRNN *grnn, Data *data, int index, int mini_batch) 
 {
+	printf("\n ============= Begin of Training Phase ========== \n");
+
 	double totaltime;
 	// best_lost = 4000.0  
     float loss , acc ;
@@ -208,6 +210,18 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 	rnn->h = allocate_dynamic_float_matrix(100, rnn->hidden_size);
 
 }
+
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr){
+
+	printf("\n ============= Model Summary ========== \n");
+	printf(" Epoch Max  : %d \n", epoch);
+	printf(" Mini batch : %d \n", mini_batch);
+	printf(" Learning Rate : %f \n", 0.01);
+	printf(" Input Size  : %d \n", rnn->input_size);
+	printf(" Hiden Size  : %d \n", rnn->hidden_size);
+	printf(" output Size  : %d \n", rnn->output_size);
+}
+
 
 void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
 {
