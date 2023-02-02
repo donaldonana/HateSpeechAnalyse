@@ -291,4 +291,19 @@ add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
 
 
 
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS){
+
+	printf("\n ============= Model Summary ========== \n");
+	printf(" Epoch Max  : %d \n", epoch);
+	printf(" Mini batch : %d \n", mini_batch);
+	printf(" Learning Rate : %f \n", lr);
+	printf(" Input Size  : %d \n", rnn->input_size);
+	printf(" Hiden Size  : %d \n", rnn->hidden_size);
+	printf(" output Size  : %d \n", rnn->output_size);
+	printf(" NUM THREADS  : %d \n", NUM_THREADS);
+
+}
+
+
+
 

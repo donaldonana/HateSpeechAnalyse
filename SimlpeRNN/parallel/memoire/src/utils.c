@@ -445,17 +445,21 @@ void data_for_plot(char *filename, int epoch, float *axis, char *axis_name){
 
 void get_data(Data *data, int nthread){
 
+	printf("\n ============= Data Summary ========== \n");
     float a;
 	int b ;
     FILE *fin = NULL;
     FILE *file = NULL;
 	FILE *stream = NULL;
     fin = fopen("../../../data/data.txt" , "r");
-    if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
-    if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
+    if(fscanf(fin, "%d" , &data->xraw)){}
+    if(fscanf(fin, "%d" , &data->xcol))
+	{printf(" data shape : (%d , %d) \n" , data->xraw , data->xcol);}
     file = fopen("../../../data/embedding.txt" , "r");
-	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
-    if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
+	if(fscanf(file, "%d" , &data->eraw)){}
+    if( fscanf(file, "%d" ,&data->ecol))
+	{printf(" Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
+
 
 	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
 	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
@@ -492,7 +496,7 @@ void get_data(Data *data, int nthread){
     }
 	// Y vector
     stream = fopen("../../../data/label.txt" , "r");
-    if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
+    if(fscanf(stream, "%d" , &data->xraw)){}
 	if (stream != NULL)
     {
         int count = 0;
@@ -506,9 +510,9 @@ void get_data(Data *data, int nthread){
 
 	data->start_val = data->xraw * 0.7 ;
 	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
-	printf(" Train data from index 1 to index %d  \n " , data->start_val);
-	printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
-	printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+	// printf(" Train data from index 1 to index %d  \n " , data->start_val);
+	// printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
+	// printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
 
 	fclose(fin);
 	fclose(file);

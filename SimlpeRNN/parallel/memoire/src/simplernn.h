@@ -77,7 +77,6 @@ void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
 
-
 void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr);
 
 void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
@@ -91,6 +90,8 @@ void reinitialize_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn);
 
 void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
+
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
 
 

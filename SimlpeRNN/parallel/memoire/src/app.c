@@ -14,7 +14,7 @@ struct timeval start_t , end_t ;
 SimpleRNN *rnn;
 Data *data ;
 float lr;
-int batch_size  ;
+int batch_size, NUM_THREADS, epoch  ;
 
 pthread_mutex_t mutexRnn;
 
@@ -28,6 +28,44 @@ int end;
 float loss;
 float acc;
 };
+
+
+void parse_input_args(int argc, char** argv)
+{
+  int a = 0;
+
+  while ( a < argc ) {
+
+    if ( argc <= (a+1) ){ 
+      break; // All flags have values attributed to them
+    }
+
+    if ( !strcmp(argv[a], "-lr") ) {
+      lr = atof(argv[a + 1]);
+      if ( lr == 0.0 ) {
+        // usage(argv);
+      }
+    } else if ( !strcmp(argv[a], "-thread") ) {
+      NUM_THREADS = atoi(argv[a + 1]);
+      if ( NUM_THREADS <= 0 ) {
+        // usage(argv);
+      }
+    } else if ( !strcmp(argv[a], "-epoch") ) {
+      epoch = (unsigned long) atoi(argv[a + 1]);
+      if ( epoch == 0 ) {
+        // usage(argv);
+      }
+    } else if ( !strcmp(argv[a], "-batch") ) {
+      batch_size = (unsigned long) atoi(argv[a + 1]);
+      if ( batch_size == 0 ) {
+        // usage(argv);
+      }
+    }  
+    a += 1;
+
+  }
+}
+
 
 
 void *ThreadTrain (void *params) { // Code du thread
@@ -52,63 +90,53 @@ void *ThreadTrain (void *params) { // Code du thread
       pthread_mutex_unlock (&mutexRnn);
       nb_traite = 0;
     }
-
     nb_traite = nb_traite + 1; 
   }
   deallocate_rnn_derived(mes_param->rnn, mes_param->drnn);
   deallocate_rnn(mes_param->rnn);
   deallocate_rnn_gradient(mes_param->rnn, mes_param->grnn);
   pthread_exit (NULL);
-
 }
 
 int main(int argc, char **argv)
 {
     srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    lr = 0.01 ;
-    double totaltime;
-
     data = malloc(sizeof(Data));
     get_data(data, 2);
-    int size = 2000;
-    int epoch = 20, NUM_THREADS = 2;
-    batch_size = 16;
-    int n , start , end;
-    float Loss , Acc ;
-
-    if(argc >= 4)
-    {
-	    NUM_THREADS = atoi(argv[1]);
-	    epoch    = atoi(argv[2]);
-      batch_size = atoi(argv[3]);
-    }
-    n = size/NUM_THREADS;
-    start = 0 ; end = n-1;
-    thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
+    double totaltime;
+    int n , r, end, start = 0 , size = 1000;
     int input = 128 , hidden = 64 , output = 2;
+    float Loss , Acc ;
+    void *status;
+
+    lr = 0.01 ;
+    epoch = 10;
+    NUM_THREADS = 2;
+    batch_size = 1;
+
+    parse_input_args(argc, argv);
+    n = size/NUM_THREADS;
+    thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
-    void *status;
-    int r;
 
-    printf("\n----Thread create phase start---- \n"); 
     /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    gettimeofday(&start_t, NULL);
-    // printf("\n %d \n", n);
-
     rnn = malloc(sizeof(SimpleRNN));
     initialize_rnn(rnn, input, hidden, output);
-    
-    for (int i = 0; i < epoch; i++)
+    print_summary(rnn, epoch, batch_size, lr, NUM_THREADS);
+    printf("\n====== Training =======\n");
+
+    gettimeofday(&start_t, NULL);
+    for (int e = 0; e < epoch; e++)
     {
         start = 0 ; 
         end = n-1 ;
         Loss = Acc = 0.0 ;
-        printf("\n epoch %d \n", (i+1));
+        printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
             
         for ( int i=0; i < NUM_THREADS ; i ++) {
             threads_params[i].rnn = malloc(sizeof(SimpleRNN));
@@ -124,7 +152,7 @@ int main(int argc, char **argv)
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            printf("Thread %d has starded \n", i);
+            // printf("Thread %d has starded \n", i);
             start = end + 1;
             end = end + n;
             if (i == (NUM_THREADS-1) )
@@ -132,7 +160,6 @@ int main(int argc, char **argv)
               end = end + size%NUM_THREADS ;
             }
         }
-        printf("----Thread create phase end----\n");
 
         /* Free attribute and wait for the other threads */
         pthread_attr_destroy(&attr);
@@ -144,8 +171,7 @@ int main(int argc, char **argv)
           }
           Loss = Loss + threads_params[t].loss ;
           Acc = Acc + threads_params[t].acc ;
-          printf("Main: thread completed %d an loss = %f and Accuracy = %f\n",t, 
-          (threads_params[t].loss)/n, (threads_params[t].acc)/n);
+          // printf("Main: thread completed %d an loss = %f and Accuracy = %f\n",t, (threads_params[t].loss)/n, (threads_params[t].acc)/n);
         }
 
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
@@ -162,3 +188,4 @@ int main(int argc, char **argv)
     free(threads_params);
     pthread_exit(NULL);
 }
+
