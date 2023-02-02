@@ -12,7 +12,7 @@
 struct timeval start_t , end_t ;
 
 
-void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, dSimpleRNN *grnn, Data *data, int index, int mini_batch) 
+void training(int epoch, SimpleRNN *rnn, gradient *drnn, SimpleRNN *AVGgradient,  Data *data, int index, int mini_batch) 
 {
 	printf("\n ============= Begin of Training Phase ========== \n");
 
@@ -26,16 +26,16 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, dSimpleRNN *grn
     {
         loss = acc = 0.0;
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
+
         for (int i = 0; i < index; i++)
         {
             forward(rnn, data->X[i], data->xcol , data->embedding);
-            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, grnn);
+            backforward(rnn, data->xcol, data->Y[i], data->X[i], data->embedding, drnn, AVGgradient);
             loss = loss + binary_loss_entropy(data->Y[i], rnn->y);
             acc = accuracy(acc , data->Y[i], rnn->y);
-
 			if(nb_traite==mini_batch || i == (index - 1))
 			{	
-				gradient_descent(rnn, grnn,  nb_traite, 0.01);
+				gradient_descent(rnn, AVGgradient,  nb_traite, 0.01);
 				nb_traite = 0;
 			}
 			nb_traite = nb_traite +  1 ;
@@ -50,10 +50,10 @@ void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, dSimpleRNN *grn
 		// 	FILE *fichier = fopen("SimpleRnn.json", "w");
     	// 	save_rnn_as_json(rnn, fichier);
 		// 	fclose(fichier);
-        // }
+    }
 
          
-    }
+    // }
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
@@ -79,14 +79,13 @@ void testing(SimpleRNN *rnn, int **data, int *datadim, float **embedding_matrix,
 void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 
 	initialize_vect_zero(rnn->h[0], rnn->hidden_size);
-    float *h1 = malloc(sizeof(float)*rnn->hidden_size);
-    float *h2 = malloc(sizeof(float)*rnn->hidden_size);
+    float *temp = malloc(sizeof(float)*rnn->hidden_size);
 	for (int t = 0; t < n; t++)
 	{
         // ht =  np.dot(xt, self.W_hx)  +  np.dot(self.h_last, self.W_hh)  + self.b_h  
-		mat_mul(h1 , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
-		mat_mul(h2, rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
-		add_three_vect(rnn->h[t+1] , h1 , rnn->b_h, h2, rnn->hidden_size);
+		mat_mul(temp , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
+		mat_mul(rnn->h[t+1], rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+		add_three_vect(rnn->h[t+1] , temp , rnn->b_h, rnn->h[t+1], rnn->hidden_size);
 		// np.tanh(ht)
 		Tanh(rnn->h[t+1], rnn->h[t+1] , rnn->hidden_size);
 	}
@@ -94,14 +93,12 @@ void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 	mat_mul(rnn->y, rnn->h[n], rnn->W_yh,  rnn->hidden_size, rnn->output_size);
 	add_vect(rnn->y, rnn->y, rnn->b_y, rnn->output_size);
 	softmax(rnn->y , rnn->y , rnn->output_size);
-    free(h1);
-    free(h2);
-	
+    free(temp);
 }
 
 
 
-void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
+void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, gradient *drnn, SimpleRNN *AVGgradient)
 {
 
 	// dy = y_pred - label
@@ -142,11 +139,12 @@ void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matri
 		
 	}
 
-	add_matrix(grnn->d_Whx, grnn->d_Whx, drnn->dWhx, rnn->input_size, rnn->hidden_size);
-	add_matrix(grnn->d_Whh, grnn->d_Whh, drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
-	add_matrix(grnn->d_Why, grnn->d_Why, drnn->dWhy, rnn->hidden_size, rnn->output_size);
-	add_vect(grnn->d_bh, grnn->d_bh, drnn->dbh, rnn->hidden_size);
-	add_vect(grnn->d_by, grnn->d_by, drnn->dby, rnn->output_size);
+	add_matrix(AVGgradient->W_hx, AVGgradient->W_hx, drnn->dWhx, rnn->input_size, rnn->hidden_size);
+	add_matrix(AVGgradient->W_hh, AVGgradient->W_hh, drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
+	add_matrix(AVGgradient->W_yh, AVGgradient->W_yh, drnn->dWhy, rnn->hidden_size, rnn->output_size);
+	
+	add_vect(AVGgradient->b_h, AVGgradient->b_h, drnn->dbh, rnn->hidden_size);
+	add_vect(AVGgradient->b_y, AVGgradient->b_y, drnn->dby, rnn->output_size);
 
 }
 
@@ -173,7 +171,7 @@ float accuracy(float acc, float y, float *y_pred) {
 }
 
 
-void deallocate_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
+void deallocate_rnn_derived(SimpleRNN *rnn, gradient * drnn)
 {
 
 	deallocate_dynamic_float_matrix(drnn->dWhx, rnn->input_size);
@@ -211,21 +209,9 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 
 }
 
-void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr){
 
-	printf("\n ============= Model Summary ========== \n");
-	printf(" Epoch Max  : %d \n", epoch);
-	printf(" Mini batch : %d \n", mini_batch);
-	printf(" Learning Rate : %f \n", 0.01);
-	printf(" Input Size  : %d \n", rnn->input_size);
-	printf(" Hiden Size  : %d \n", rnn->hidden_size);
-	printf(" output Size  : %d \n", rnn->output_size);
-}
-
-
-void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
+void initialize_rnn_derived(SimpleRNN *rnn, gradient * drnn)
 {
-
 	drnn->dWhx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
 	drnn->dWhh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
 	drnn->WhhT = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
@@ -237,46 +223,37 @@ void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn)
     drnn->temp2 = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
 	drnn->temp3 = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
 	drnn->dh = malloc(sizeof(float)*rnn->hidden_size);
-
 }
 
-void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
-	grnn->d_Whx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
-	grnn->d_Whh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	grnn->d_Why = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
-	grnn->d_bh = malloc(sizeof(float)*rnn->hidden_size);
-	grnn->d_by = malloc(sizeof(float)*rnn->output_size);
-	zero_rnn_gradient(rnn,grnn);
+void initialize_rnn_gradient(SimpleRNN *AVGgradient){
+	AVGgradient->W_hx = allocate_dynamic_float_matrix(AVGgradient->input_size, AVGgradient->hidden_size);
+	AVGgradient->W_hh = allocate_dynamic_float_matrix(AVGgradient->hidden_size, AVGgradient->hidden_size);
+	AVGgradient->W_yh = allocate_dynamic_float_matrix(AVGgradient->hidden_size, AVGgradient->output_size);
+	// bias
+	AVGgradient->b_h = malloc(sizeof(float)*AVGgradient->hidden_size);
+	AVGgradient->b_y = malloc(sizeof(float)*AVGgradient->output_size);
+	zero_rnn_gradient(AVGgradient);
 }
 
-void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr){
+void gradient_descent(SimpleRNN *rnn, SimpleRNN  *AVGgradient, int n, float lr){
 	// Parameters Update  with SGD  o = o - lr*do
-	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n, lr);
-	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n, lr);
-	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n, lr);
-	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n, lr);
-	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n, lr);
-	zero_rnn_gradient(rnn, grnn);
+	update_matrix(rnn->W_hh, rnn->W_hh, AVGgradient->W_hh,  rnn->hidden_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_hx, rnn->W_hx, AVGgradient->W_hx,  rnn->input_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_yh, rnn->W_yh, AVGgradient->W_yh,  rnn->hidden_size, rnn->output_size, n, lr);
+	// bias
+	update_vect(rnn->b_h,  rnn->b_h,  AVGgradient->b_h,  rnn->hidden_size, n, lr);
+	update_vect(rnn->b_y,  rnn->b_y,  AVGgradient->b_y,  rnn->output_size, n, lr);
+	zero_rnn_gradient(AVGgradient);
 }
 
-void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn)
+
+void zero_rnn_gradient(SimpleRNN *AVGgradient)
 {
-	deallocate_dynamic_float_matrix(grnn->d_Whx, rnn->input_size);
-	deallocate_dynamic_float_matrix(grnn->d_Whh , rnn->hidden_size);
-	deallocate_dynamic_float_matrix(grnn->d_Why , rnn->hidden_size);
-	free(grnn->d_bh) ;
-	free(grnn->d_by) ;
-}
-
-void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
-
-	initialize_vect_zero(grnn->d_bh, rnn->hidden_size);
-	initialize_vect_zero(grnn->d_by, rnn->output_size);
-	initialize_mat_zero(grnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
-	initialize_mat_zero(grnn->d_Whx, rnn->input_size, rnn->hidden_size);
-	initialize_mat_zero(grnn->d_Why, rnn->hidden_size, rnn->output_size);
-
-
+	initialize_vect_zero(AVGgradient->b_h, AVGgradient->hidden_size);
+	initialize_vect_zero(AVGgradient->b_y, AVGgradient->output_size);
+	initialize_mat_zero(AVGgradient->W_hh, AVGgradient->hidden_size, AVGgradient->hidden_size);
+	initialize_mat_zero(AVGgradient->W_hx, AVGgradient->input_size,  AVGgradient->hidden_size);
+	initialize_mat_zero(AVGgradient->W_yh, AVGgradient->hidden_size, AVGgradient->output_size);
 }
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
@@ -305,3 +282,14 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
 }
 
 
+
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr){
+
+	printf("\n ============= Model Summary ========== \n");
+	printf(" Epoch Max  : %d \n", epoch);
+	printf(" Mini batch : %d \n", mini_batch);
+	printf(" Learning Rate : %f \n", 0.01);
+	printf(" Input Size  : %d \n", rnn->input_size);
+	printf(" Hiden Size  : %d \n", rnn->hidden_size);
+	printf(" output Size  : %d \n", rnn->output_size);
+}

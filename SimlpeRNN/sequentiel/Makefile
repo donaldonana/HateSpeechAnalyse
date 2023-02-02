@@ -4,16 +4,20 @@ SRC = src
 LIB = lib
 OBJ = obj
 BIN = bin
-OBJECTS = $(OBJ)/utils.o $(OBJ)/simplernn.o
-HEADERS = $(SRC)/utils.h  $(SRC)/simplernn.h
+OBJECTS = $(OBJ)/algebre.o $(OBJ)/simplernn.o $(OBJ)/utils.o
+HEADERS = $(SRC)/algebre.h  $(SRC)/simplernn.h $(SRC)/utils.h
 
 all : app test
 
-$(OBJ)/utils.o: $(SRC)/utils.c $(HEADERS)
-	$(CC) $(CFLAGS) $(SRC)/utils.c  -o  $(OBJ)/utils.o -lm
+$(OBJ)/algebre.o: $(SRC)/algebre.c $(HEADERS)
+	$(CC) $(CFLAGS) $(SRC)/algebre.c  -o  $(OBJ)/algebre.o -lm
 
 $(OBJ)/simplernn.o: $(SRC)/simplernn.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/simplernn.c  -o  $(OBJ)/simplernn.o -lm
+
+
+$(OBJ)/utils.o: $(SRC)/utils.c $(HEADERS)
+	$(CC) $(CFLAGS) $(SRC)/utils.c  -o  $(OBJ)/utils.o -lm
 
 $(OBJ)/app.o: $(SRC)/app.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/app.c  -o $(OBJ)/app.o -lm
