@@ -28,14 +28,13 @@ float testing(SimpleRNN *rnn, Data *data, int start, int end){
 void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 
 	initialize_vect_zero(rnn->h[0], rnn->hidden_size);
-    float *h1 = malloc(sizeof(float)*rnn->hidden_size);
-    float *h2 = malloc(sizeof(float)*rnn->hidden_size);
+    float *temp = malloc(sizeof(float)*rnn->hidden_size);
 	for (int t = 0; t < n; t++)
 	{
         // ht =  np.dot(xt, self.W_hx)  +  np.dot(self.h_last, self.W_hh)  + self.b_h  
-		mat_mul(h1 , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
-		mat_mul(h2, rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
-		add_three_vect(rnn->h[t+1] , h1 , rnn->b_h, h2, rnn->hidden_size);
+		mat_mul(temp , embedding_matrix[x[t]], rnn->W_hx, rnn->input_size, rnn->hidden_size);
+		mat_mul(rnn->h[t+1], rnn->h[t], rnn->W_hh, rnn->hidden_size, rnn->hidden_size);
+		add_three_vect(rnn->h[t+1] , temp , rnn->b_h, rnn->h[t+1], rnn->hidden_size);
 		// np.tanh(ht)
 		Tanh(rnn->h[t+1], rnn->h[t+1] , rnn->hidden_size);
 	}
@@ -43,69 +42,64 @@ void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix){
 	mat_mul(rnn->y, rnn->h[n], rnn->W_yh,  rnn->hidden_size, rnn->output_size);
 	add_vect(rnn->y, rnn->y, rnn->b_y, rnn->output_size);
 	softmax(rnn->y , rnn->y , rnn->output_size);
-    free(h1);
-    free(h2);
-	
+    free(temp);
 }
 
-void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, DerivedSimpleRNN *drnn, dSimpleRNN *grnn)
+void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, DerivedSimpleRNN *grad, SimpleRNN *AVGgradient)
 {
-
 	// dy = y_pred - label
-    copy_vect(drnn->dby, rnn->y, rnn->output_size);
-    drnn->dby[idx] = drnn->dby[idx] - 1;
+    copy_vect(grad->dby, rnn->y, rnn->output_size);
+    grad->dby[idx] = grad->dby[idx] - 1;
 
 	// dWhy = last_h.T * dy 
-	vect_mult(drnn->dWhy , drnn->dby, rnn->h[n],  rnn->hidden_size, rnn->output_size);
+	vect_mult(grad->dWhy , grad->dby, rnn->h[n],  rnn->hidden_size, rnn->output_size);
 
     // Initialize dWhh, dWhx, and dbh to zero.
-	initialize_mat_zero(drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
-	initialize_mat_zero(drnn->dWhx, rnn->input_size , rnn->hidden_size);
-	initialize_vect_zero(drnn->dbh, rnn->hidden_size);
+	initialize_mat_zero(grad->dWhh, rnn->hidden_size, rnn->hidden_size);
+	initialize_mat_zero(grad->dWhx, rnn->input_size , rnn->hidden_size);
+	initialize_vect_zero(grad->dbh, rnn->hidden_size);
 
 	// dh = np.matmul( dy , self.W_yh.T  )
-	trans_mat(drnn->WhyT, rnn->W_yh, rnn->hidden_size,  rnn->output_size);
-	mat_mul(drnn->dh , drnn->dby, drnn->WhyT,  rnn->output_size, rnn->hidden_size);
+	trans_mat(grad->WhyT, rnn->W_yh, rnn->hidden_size,  rnn->output_size);
+	mat_mul(grad->dh , grad->dby, grad->WhyT,  rnn->output_size, rnn->hidden_size);
 
 	for (int t = n-1; t >= 0; t--)
 	{     
 		// (1 - np.power( h[t+1], 2 )) * dh   
-		dhraw( drnn->dhraw, rnn->h[t+1] , drnn->dh, rnn->hidden_size);
+		dhraw( grad->dhraw, rnn->h[t+1] , grad->dh, rnn->hidden_size);
 
         // dbh += dhraw
-		add_vect(drnn->dbh, drnn->dbh, drnn->dhraw, rnn->hidden_size);
+		add_vect(grad->dbh, grad->dbh, grad->dhraw, rnn->hidden_size);
 
 	    // dWhh += np.dot(dhraw, hs[t-1].T)
-		vect_mult(drnn->temp2 , drnn->dhraw, rnn->h[t], rnn->hidden_size, rnn->hidden_size);
-		add_matrix(drnn->dWhh , drnn->dWhh, drnn->temp2 , rnn->hidden_size, rnn->hidden_size);
+		vect_mult(grad->temp2 , grad->dhraw, rnn->h[t], rnn->hidden_size, rnn->hidden_size);
+		add_matrix(grad->dWhh , grad->dWhh, grad->temp2 , rnn->hidden_size, rnn->hidden_size);
 
 		// dWxh += np.dot(dhraw, x[t].T)
-		vect_mult(drnn->temp3, drnn->dhraw, embedding_matrix[x[t]], rnn->input_size, rnn->hidden_size );
-		add_matrix(drnn->dWhx , drnn->dWhx, drnn->temp3, rnn->input_size, rnn->hidden_size);
+		vect_mult(grad->temp3, grad->dhraw, embedding_matrix[x[t]], rnn->input_size, rnn->hidden_size );
+		add_matrix(grad->dWhx , grad->dWhx, grad->temp3, rnn->input_size, rnn->hidden_size);
 
 		//  dh = np.matmul( dhraw, self.W_hh.T )
-		trans_mat(drnn->WhhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
-		mat_mul(drnn->dh , drnn->dhraw, drnn->WhhT, rnn->hidden_size, rnn->hidden_size);
+		trans_mat(grad->WhhT, rnn->W_hh, rnn->hidden_size,  rnn->hidden_size);
+		mat_mul(grad->dh , grad->dhraw, grad->WhhT, rnn->hidden_size, rnn->hidden_size);
 		
 	}
-
-	
-	 add_matrix(grnn->d_Whx, grnn->d_Whx, drnn->dWhx, rnn->input_size, rnn->hidden_size);
-	 add_matrix(grnn->d_Whh, grnn->d_Whh, drnn->dWhh, rnn->hidden_size, rnn->hidden_size);
-	 add_matrix(grnn->d_Why, grnn->d_Why, drnn->dWhy, rnn->hidden_size, rnn->output_size);
-	 add_vect(grnn->d_bh, grnn->d_bh, drnn->dbh, rnn->hidden_size);
-	 add_vect(grnn->d_by, grnn->d_by, drnn->dby, rnn->output_size);
+	add_matrix(AVGgradient->W_hx, AVGgradient->W_hx,  grad->dWhx, rnn->input_size, rnn->hidden_size);
+	add_matrix(AVGgradient->W_hh, AVGgradient->W_hh,  grad->dWhh, rnn->hidden_size, rnn->hidden_size);
+	add_matrix(AVGgradient->W_yh, AVGgradient->W_yh,  grad->dWhy, rnn->hidden_size, rnn->output_size);
+	add_vect(AVGgradient->b_h,    AVGgradient->b_h,   grad->dbh,  rnn->hidden_size);
+	add_vect(AVGgradient->b_y,    AVGgradient->b_y,   grad->dby,  rnn->output_size);
 
 }
 
-void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr){
+void gradient_descent(SimpleRNN *rnn, SimpleRNN *AVGgradient, int n, float lr){
 	// Parameters Update  with SGD  o = o - lr*do
-	update_matrix(rnn->W_hh, rnn->W_hh, grnn->d_Whh,  rnn->hidden_size, rnn->hidden_size, n, lr);
-	update_matrix(rnn->W_hx, rnn->W_hx, grnn->d_Whx,  rnn->input_size, rnn->hidden_size, n, lr);
-	update_matrix(rnn->W_yh, rnn->W_yh, grnn->d_Why,  rnn->hidden_size, rnn->output_size, n, lr);
-	update_vect(rnn->b_h, rnn->b_h, grnn->d_bh, rnn->hidden_size, n, lr);
-	update_vect(rnn->b_y, rnn->b_y, grnn->d_by, rnn->output_size, n, lr);
-	zero_rnn_gradient(rnn, grnn);
+	update_matrix(rnn->W_hh, rnn->W_hh, AVGgradient->W_hh,  rnn->hidden_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_hx, rnn->W_hx, AVGgradient->W_hx,  rnn->input_size, rnn->hidden_size, n, lr);
+	update_matrix(rnn->W_yh, rnn->W_yh, AVGgradient->W_yh,  rnn->hidden_size, rnn->output_size, n, lr);
+	update_vect(rnn->b_h,    rnn->b_h,  AVGgradient->b_h, rnn->hidden_size, n, lr);
+	update_vect(rnn->b_y,    rnn->b_y,  AVGgradient->b_y, rnn->output_size, n, lr);
+	zero_rnn_gradient(rnn, AVGgradient);
 }
 
 
@@ -186,8 +180,6 @@ void deallocate_rnn(SimpleRNN *rnn)
     deallocate_dynamic_float_matrix(rnn->h , 100);
 }
 
-
-
 void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_size)
 {
 	rnn->input_size = input_size;
@@ -207,31 +199,32 @@ void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_
 	rnn->h = allocate_dynamic_float_matrix(100, rnn->hidden_size);
 
 }
-void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
-	grnn->d_Whx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
-	grnn->d_Whh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
-	grnn->d_Why = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
-	grnn->d_bh = malloc(sizeof(float)*rnn->hidden_size);
-	grnn->d_by = malloc(sizeof(float)*rnn->output_size);
-	zero_rnn_gradient(rnn,grnn);
+void initialize_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient){
+	AVGgradient->W_hx = allocate_dynamic_float_matrix(rnn->input_size, rnn->hidden_size);
+	AVGgradient->W_hh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->hidden_size);
+	AVGgradient->W_yh = allocate_dynamic_float_matrix(rnn->hidden_size, rnn->output_size);
+	AVGgradient->b_h = malloc(sizeof(float)*rnn->hidden_size);
+	AVGgradient->b_y = malloc(sizeof(float)*rnn->output_size);
+	zero_rnn_gradient(rnn, AVGgradient);
 }
 
-void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn)
+void deallocate_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient)
 {
-	deallocate_dynamic_float_matrix(grnn->d_Whx, rnn->input_size);
-	deallocate_dynamic_float_matrix(grnn->d_Whh , rnn->hidden_size);
-	deallocate_dynamic_float_matrix(grnn->d_Why , rnn->hidden_size);
-	free(grnn->d_bh) ;
-	free(grnn->d_by) ;
+	deallocate_dynamic_float_matrix(AVGgradient->W_hx , rnn->input_size);
+	deallocate_dynamic_float_matrix(AVGgradient->W_hh , rnn->hidden_size);
+	deallocate_dynamic_float_matrix(AVGgradient->W_yh , rnn->hidden_size);
+	free(AVGgradient->b_h) ;
+	free(AVGgradient->b_y) ;
 }
 
-void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn){
+void zero_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient){
 
-	initialize_vect_zero(grnn->d_bh, rnn->hidden_size);
-	initialize_vect_zero(grnn->d_by, rnn->output_size);
-	initialize_mat_zero(grnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
-	initialize_mat_zero(grnn->d_Whx, rnn->input_size, rnn->hidden_size);
-	initialize_mat_zero(grnn->d_Why, rnn->hidden_size, rnn->output_size);
+	initialize_vect_zero(AVGgradient->b_h, rnn->hidden_size);
+	initialize_vect_zero(AVGgradient->b_y, rnn->output_size);
+
+	initialize_mat_zero(AVGgradient->W_hh, rnn->hidden_size, rnn->hidden_size);
+	initialize_mat_zero(AVGgradient->W_hx, rnn->input_size, rnn->hidden_size);
+	initialize_mat_zero(AVGgradient->W_yh, rnn->hidden_size, rnn->output_size);
 
 
 }
@@ -278,14 +271,14 @@ void save_rnn_as_json(SimpleRNN *rnn, FILE *fo){
 
 }
 
-void somme_gradient( dSimpleRNN *grnn, dSimpleRNN *secondgrnn, SimpleRNN *rnn){
+void somme_gradient( SimpleRNN *AVGgradient, SimpleRNN *secondAVGgradient, SimpleRNN *rnn){
 
-add_matrix(grnn->d_Whx, grnn->d_Whx, secondgrnn->d_Whx, rnn->input_size,  rnn->hidden_size);
-add_matrix(grnn->d_Whh, grnn->d_Whh, secondgrnn->d_Whh, rnn->hidden_size, rnn->hidden_size);
-add_matrix(grnn->d_Why, grnn->d_Why, secondgrnn->d_Why, rnn->hidden_size, rnn->output_size);
-add_vect(grnn->d_bh, grnn->d_bh, secondgrnn->d_bh, rnn->hidden_size);
-add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
+add_matrix(AVGgradient->W_hx, AVGgradient->W_hx, secondAVGgradient->W_hx, rnn->input_size,  rnn->hidden_size);
+add_matrix(AVGgradient->W_hx, AVGgradient->W_hh, secondAVGgradient->W_hh, rnn->hidden_size, rnn->hidden_size);
+add_matrix(AVGgradient->W_yh, AVGgradient->W_yh, secondAVGgradient->W_yh, rnn->hidden_size, rnn->output_size);
 
+add_vect(AVGgradient->b_h, AVGgradient->b_h, secondAVGgradient->b_h, rnn->hidden_size);
+add_vect(AVGgradient->b_y, AVGgradient->b_y, secondAVGgradient->b_h, rnn->output_size);
 
 }
 
@@ -294,13 +287,14 @@ add_vect(grnn->d_by, grnn->d_by, secondgrnn->d_by, rnn->output_size);
 void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS){
 
 	printf("\n ============= Model Summary ========== \n");
-	printf(" Epoch Max  : %d \n", epoch);
-	printf(" Mini batch : %d \n", mini_batch);
-	printf(" Learning Rate : %f \n", lr);
-	printf(" Input Size  : %d \n", rnn->input_size);
-	printf(" Hiden Size  : %d \n", rnn->hidden_size);
-	printf(" output Size  : %d \n", rnn->output_size);
-	printf(" NUM THREADS  : %d \n", NUM_THREADS);
+	printf("\n Model : Simple Recurrent Neural Network  \n" ) ;
+	printf(" Epoch Max  :    %d    \n", epoch);
+	printf(" Mini batch :    %d    \n", mini_batch);
+	printf(" Learning Rate : %f    \n", lr);
+	printf(" Input Size  :   %d    \n", rnn->input_size);
+	printf(" Hiden Size  :   %d    \n", rnn->hidden_size);
+	printf(" output Size  :  %d    \n", rnn->output_size);
+	printf(" NUM THREADS  :  %d    \n", NUM_THREADS);
 
 }
 

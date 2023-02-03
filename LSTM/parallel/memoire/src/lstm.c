@@ -41,6 +41,7 @@ int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros)
   lstm->dldho = get_zero_vector(N);
   lstm->dldc  = get_zero_vector(N);
   lstm->dldh  = get_zero_vector(N);
+  lstm->dlby = get_zero_vector(Y);
 
   lstm->dldXc = get_zero_vector(S);
   lstm->dldXo = get_zero_vector(S);
@@ -206,7 +207,8 @@ void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_values_cache**
   dldhi = model->dldhi;
   dldhf = model->dldhf;
   dldhc = model->dldhc;
-  dldy = model->probs;
+  dldy = model->dlby;
+  copy_vector(dldy, model->probs, model->Y);
 
   if ( y_correct >= 0 ) {
     dldy[y_correct] -= 1.0;
@@ -356,6 +358,26 @@ void lstm_zero_the_model(lstm_rnn * model)
   vector_set_to_zero(model->dldXf, model->S);
 }
 
+void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm)
+{
+
+  // secondlstm->X = lstm->X;  
+  // secondlstm->N = lstm->N;  
+  // secondlstm->S = lstm->S;  
+  // secondlstm->Y = lstm->Y;  
+  copy_vector(secondlstm->Wf, lstm->Wf, lstm->N*lstm->S);
+  copy_vector(secondlstm->Wi, lstm->Wi, lstm->N*lstm->S);
+  copy_vector(secondlstm->Wc, lstm->Wc, lstm->N*lstm->S);
+  copy_vector(secondlstm->Wo, lstm->Wo, lstm->N*lstm->S);
+  copy_vector(secondlstm->Wy, lstm->Wy, lstm->Y*lstm->N);
+  copy_vector(secondlstm->bf, lstm->bf, lstm->N);
+  copy_vector(secondlstm->bi, lstm->bi, lstm->N);
+  copy_vector(secondlstm->bc, lstm->bc, lstm->N);
+  copy_vector(secondlstm->bo, lstm->bo, lstm->N);
+  copy_vector(secondlstm->by, lstm->by, lstm->Y);
+
+}
+
 
 void sum_gradients(lstm_rnn* gradients, lstm_rnn* gradients_entry)
 {
@@ -386,40 +408,8 @@ void mean_gradients(lstm_rnn* gradients, double d)
   vectors_scalar_multiply(gradients->bf, d, gradients->N);
   vectors_scalar_multiply(gradients->bo, d, gradients->N);
 
-
 }
-
-void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, int mini_batch_size, float lr, Data* data, lstm_values_cache** cache, double* h_prev, double* c_prev){
-
-    float Loss = 0.0;
-    int nb_traite  = 0 ; 
-    for (int i = 0; i < 1000; i++)
-    {
-      // forward
-      lstm_forward(lstm, data->X[i], h_prev, c_prev, cache, data);
-      Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs);
-      // backforward
-      lstm_backforward(lstm, data->Y[i], (data->xcol-1), cache, gradient);
-      sum_gradients(AVGgradient, gradient);
-
-      nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 999)
-      {
-        mean_gradients(AVGgradient, nb_traite);
-        // update
-        gradients_decend(lstm, AVGgradient, lr);
-        lstm_zero_the_model(AVGgradient);
-        nb_traite = 0 ;
-      }
-
-      lstm_zero_the_model(gradient);
-      set_vector_zero(h_prev, lstm->N);
-      set_vector_zero(c_prev, lstm->N);
-    }
-    Loss = Loss/1000;
-    printf("%lf \n" , Loss);    
-
-}
+ 
 
 lstm_values_cache** alloc_cache_array(int X, int N, int Y, int l){
 
@@ -431,7 +421,6 @@ lstm_values_cache** alloc_cache_array(int X, int N, int Y, int l){
   return cache;
 
 }
-
 
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS){

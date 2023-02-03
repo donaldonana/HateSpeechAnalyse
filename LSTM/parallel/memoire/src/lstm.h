@@ -28,7 +28,6 @@ typedef struct lstm_rnn
   // lstm output probability vector 
   double* probs; 
 
-
   // The model 
   double* Wf;
   double* Wi;
@@ -52,6 +51,7 @@ typedef struct lstm_rnn
   double* dldXo;
   double* dldXf;
   double* dldXc;
+  double* dlby;
 
   // Gradient descent momentum
   double* Wfm;
@@ -99,13 +99,16 @@ void gradients_decend(lstm_rnn* model, lstm_rnn* gradients, float lr);
 
 void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient,  int mini_batch_size, float lr, Data* data, lstm_values_cache** cache, double* h_prev, double* c_prev);
 
-lstm_values_cache*  lstm_cache_container_init(int X, int N, int Y);
-lstm_values_cache** alloc_cache_array(int X, int N, int Y, int l);
+void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm);
 
 void sum_gradients(lstm_rnn* gradients, lstm_rnn* gradients_entry);
 
 void mean_gradients(lstm_rnn* gradients, double d);
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS);
+
+lstm_values_cache*  lstm_cache_container_init(int X, int N, int Y);
+
+lstm_values_cache** alloc_cache_array(int X, int N, int Y, int l);
 
 #endif

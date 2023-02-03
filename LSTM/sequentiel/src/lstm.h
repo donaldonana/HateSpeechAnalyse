@@ -52,6 +52,8 @@ typedef struct lstm_rnn
   double* dldXo;
   double* dldXf;
   double* dldXc;
+  double* dldy;
+
 
   // Gradient descent momentum
   double* Wfm;

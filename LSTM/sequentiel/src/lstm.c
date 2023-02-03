@@ -41,6 +41,8 @@ int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros)
   lstm->dldho = get_zero_vector(N);
   lstm->dldc  = get_zero_vector(N);
   lstm->dldh  = get_zero_vector(N);
+  lstm->dldy = get_zero_vector(Y);
+
 
   lstm->dldXc = get_zero_vector(S);
   lstm->dldXo = get_zero_vector(S);
@@ -200,13 +202,14 @@ void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_values_cache**
   double *weigth = malloc((N*S)*sizeof(double));
 
   // model cache
-  dldh = model->dldh;
-  dldc = model->dldc;
+  dldh  = model->dldh;
+  dldc  = model->dldc;
   dldho = model->dldho;
   dldhi = model->dldhi;
   dldhf = model->dldhf;
   dldhc = model->dldhc;
-  dldy = model->probs;
+  dldy  = model->dldy;
+  copy_vector(dldy, model->probs, model->Y);
 
   if ( y_correct >= 0 ) {
     dldy[y_correct] -= 1.0;
@@ -401,7 +404,7 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       // backforward
       lstm_backforward(lstm, data->Y[i], (data->xcol-1), cache, gradient);
       sum_gradients(AVGgradient, gradient);
-
+      
       nb_traite = nb_traite + 1 ;
       if (nb_traite == mini_batch_size || i == 999)
       {
@@ -431,8 +434,6 @@ lstm_values_cache** alloc_cache_array(int X, int N, int Y, int l){
   return cache;
 
 }
-
-
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS){
 

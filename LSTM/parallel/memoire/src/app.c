@@ -11,18 +11,18 @@
 // # define NUM_THREADS 2
 
 struct timeval start_t , end_t ;
-SimpleRNN *rnn;
+lstm_rnn* lstm;
 Data *data ;
 float lr;
-int batch_size, NUM_THREADS, epoch  ;
+int MINI_BATCH_SIZE, NUM_THREADS, epoch  ;
 
 pthread_mutex_t mutexRnn;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
-SimpleRNN *rnn;
-DerivedSimpleRNN *drnn;
-dSimpleRNN *grnn;
+lstm_rnn* lstm;
+lstm_rnn* gradient  ;
+lstm_rnn* AVGgradient ;
 int start;
 int end;
 float loss;
@@ -56,8 +56,8 @@ void parse_input_args(int argc, char** argv)
         // usage(argv);
       }
     } else if ( !strcmp(argv[a], "-batch") ) {
-      batch_size = (unsigned long) atoi(argv[a + 1]);
-      if ( batch_size == 0 ) {
+      MINI_BATCH_SIZE = (unsigned long) atoi(argv[a + 1]);
+      if ( MINI_BATCH_SIZE == 0 ) {
         // usage(argv);
       }
     }  
@@ -70,31 +70,41 @@ void parse_input_args(int argc, char** argv)
 
 void *ThreadTrain (void *params) { // Code du thread
   struct thread_param *mes_param ;
-  mes_param = ( struct thread_param *) params ;
-  mes_param->grnn = malloc(sizeof(dSimpleRNN));
   int nb_traite = 0;
-	initialize_rnn_gradient(mes_param->rnn, mes_param->grnn);
+  mes_param = ( struct thread_param *) params ;
+  mes_param->AVGgradient = e_calloc(1, sizeof(lstm_rnn));
+  lstm_init_model(lstm->X, lstm->N, lstm->Y , mes_param->AVGgradient , 1);
+  double *h_prev = get_zero_vector(lstm->N);
+  double *c_prev = get_zero_vector(lstm->N);
+  lstm_values_cache **cache = alloc_cache_array(lstm->X, lstm->N, lstm->Y, data->xcol);
+
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
-    forward(mes_param->rnn, data->X[i], data->xcol , data->embedding);
-    backforward(mes_param->rnn, data->xcol, data->Y[i], data->X[i], data->embedding, 
-    mes_param->drnn, mes_param->grnn);
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->y);
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->rnn->y);
-        
-    if(nb_traite==batch_size || i == (mes_param->end -1))
+    lstm_forward(mes_param->lstm, data->X[i], h_prev, c_prev, cache, data);
+    lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), cache, mes_param->gradient);
+    sum_gradients(mes_param->AVGgradient, mes_param->gradient);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
+    // mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->lstm->probs);
+    nb_traite = nb_traite + 1; 
+    if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
       pthread_mutex_lock (&mutexRnn);
-        gradient_descent(rnn, mes_param->grnn,  nb_traite, lr);
-        reinitialize_rnn(rnn, mes_param->rnn);
+        mean_gradients(mes_param->AVGgradient, nb_traite);
+        gradients_decend(lstm, mes_param->AVGgradient, lr);
+        copy_lstm(lstm, mes_param->lstm);
+        lstm_zero_the_model(mes_param->AVGgradient);
       pthread_mutex_unlock (&mutexRnn);
       nb_traite = 0;
     }
-    nb_traite = nb_traite + 1; 
+    lstm_zero_the_model(mes_param->gradient);
+    set_vector_zero(h_prev, lstm->N);
+    set_vector_zero(c_prev, lstm->N);
+
   }
-  deallocate_rnn_derived(mes_param->rnn, mes_param->drnn);
-  deallocate_rnn(mes_param->rnn);
-  deallocate_rnn_gradient(mes_param->rnn, mes_param->grnn);
+  lstm_free_model(mes_param->gradient);
+  lstm_free_model(mes_param->AVGgradient);
+  lstm_free_model(mes_param->lstm);
+
   pthread_exit (NULL);
 }
 
@@ -103,33 +113,30 @@ int main(int argc, char **argv)
     srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     data = malloc(sizeof(Data));
-    get_data(data, 2);
+    get_data(data);
     double totaltime;
-    int n , r, end, start = 0 , size = 1000;
-    int input = 128 , hidden = 64 , output = 2;
-    float Loss , Acc ;
     void *status;
-
+    int n , r, end, start = 0 , size = 1000;
+    int X = data->ecol , N = 64, Y = 2;
+    float Loss , Acc ;
     lr = 0.01 ;
-    epoch = 10;
+    epoch = 20;
     NUM_THREADS = 2;
-    batch_size = 1;
+    MINI_BATCH_SIZE = 1;
 
-    parse_input_args(argc, argv);
+    // parse_input_args(argc, argv);
     n = size/NUM_THREADS;
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
-
     /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    lstm = e_calloc(1, sizeof(lstm_rnn));
+    lstm_init_model(X, N, Y , lstm, 0); 
+    // print_summary(lstm, epoch, batch_size, lr, NUM_THREADS);
 
-    rnn = malloc(sizeof(SimpleRNN));
-    initialize_rnn(rnn, input, hidden, output);
-    print_summary(rnn, epoch, batch_size, lr, NUM_THREADS);
     printf("\n====== Training =======\n");
-
     gettimeofday(&start_t, NULL);
     for (int e = 0; e < epoch; e++)
     {
@@ -137,12 +144,12 @@ int main(int argc, char **argv)
         end = n-1 ;
         Loss = Acc = 0.0 ;
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-            
         for ( int i=0; i < NUM_THREADS ; i ++) {
-            threads_params[i].rnn = malloc(sizeof(SimpleRNN));
-            copy_rnn(rnn, threads_params[i].rnn);
-            threads_params[i].drnn = malloc(sizeof(DerivedSimpleRNN));
-            initialize_rnn_derived(threads_params[i].rnn , threads_params[i].drnn);
+            threads_params[i].lstm = e_calloc(1, sizeof(lstm_rnn));
+            lstm_init_model(X, N, Y , threads_params[i].lstm , 0);
+            threads_params[i].gradient = e_calloc(1, sizeof(lstm_rnn));
+            lstm_init_model(X, N, Y , threads_params[i].gradient , 1);
+            copy_lstm(lstm, threads_params[i].lstm);
             threads_params[i].loss = 0.0;
             threads_params[i].acc = 0.0;
             threads_params[i].start = start;
@@ -152,7 +159,6 @@ int main(int argc, char **argv)
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            // printf("Thread %d has starded \n", i);
             start = end + 1;
             end = end + n;
             if (i == (NUM_THREADS-1) )
@@ -170,7 +176,7 @@ int main(int argc, char **argv)
             exit(-1);
           }
           Loss = Loss + threads_params[t].loss ;
-          Acc = Acc + threads_params[t].acc ;
+          // Acc = Acc + threads_params[t].acc ;
           // printf("Main: thread completed %d an loss = %f and Accuracy = %f\n",t, (threads_params[t].loss)/n, (threads_params[t].acc)/n);
         }
 
@@ -183,7 +189,7 @@ int main(int argc, char **argv)
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
     
     pthread_mutex_destroy(&mutexRnn);
-    deallocate_rnn(rnn);
+    lstm_free_model(lstm);
     free(threads);
     free(threads_params);
     pthread_exit(NULL);

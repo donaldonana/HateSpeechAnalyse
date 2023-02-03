@@ -20,13 +20,13 @@ pthread_mutex_t mutexRnn;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
-SimpleRNN *rnn;
-DerivedSimpleRNN *drnn;
-dSimpleRNN *grnn;
-int start;
-int end;
-float loss;
-float acc;
+  SimpleRNN *rnn;
+  DerivedSimpleRNN *grad;
+  SimpleRNN *AVGgradient;
+  int start;
+  int end;
+  float loss;
+  float acc;
 };
 
 
@@ -67,40 +67,39 @@ void parse_input_args(int argc, char** argv)
 }
 
 
-
-void *ThreadTrain (void *params) { // Code du thread
+void *ThreadTrain (void *params)  // Code du thread
+{ 
   struct thread_param *mes_param ;
   mes_param = ( struct thread_param *) params ;
-  mes_param->grnn = malloc(sizeof(dSimpleRNN));
+  mes_param->AVGgradient = malloc(sizeof(SimpleRNN));
   int nb_traite = 0;
-	initialize_rnn_gradient(mes_param->rnn, mes_param->grnn);
+	initialize_rnn_gradient(mes_param->rnn, mes_param->AVGgradient);
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
     forward(mes_param->rnn, data->X[i], data->xcol , data->embedding);
-    backforward(mes_param->rnn, data->xcol, data->Y[i], data->X[i], data->embedding, 
-    mes_param->drnn, mes_param->grnn);
+    backforward(mes_param->rnn, data->xcol, data->Y[i], data->X[i], data->embedding, mes_param->grad, mes_param->AVGgradient);
     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->y);
     mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->rnn->y);
-        
+
+    nb_traite = nb_traite + 1; 
     if(nb_traite==batch_size || i == (mes_param->end -1))
     {	
       pthread_mutex_lock (&mutexRnn);
-        gradient_descent(rnn, mes_param->grnn,  nb_traite, lr);
+        gradient_descent(rnn, mes_param->AVGgradient,  nb_traite, lr);
         reinitialize_rnn(rnn, mes_param->rnn);
       pthread_mutex_unlock (&mutexRnn);
       nb_traite = 0;
     }
-    nb_traite = nb_traite + 1; 
   }
-  deallocate_rnn_derived(mes_param->rnn, mes_param->drnn);
+  deallocate_rnn_derived(mes_param->rnn, mes_param->grad);
   deallocate_rnn(mes_param->rnn);
-  deallocate_rnn_gradient(mes_param->rnn, mes_param->grnn);
+  deallocate_rnn_gradient(mes_param->rnn, mes_param->AVGgradient);
   pthread_exit (NULL);
 }
 
 int main(int argc, char **argv)
 {
-    srand(time(NULL));
+    // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     data = malloc(sizeof(Data));
     get_data(data, 2);
@@ -110,13 +109,13 @@ int main(int argc, char **argv)
     float Loss , Acc ;
     void *status;
 
+    // default parameters 
     lr = 0.01 ;
     epoch = 10;
     NUM_THREADS = 2;
     batch_size = 1;
 
     parse_input_args(argc, argv);
-    n = size/NUM_THREADS;
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
@@ -128,9 +127,11 @@ int main(int argc, char **argv)
     rnn = malloc(sizeof(SimpleRNN));
     initialize_rnn(rnn, input, hidden, output);
     print_summary(rnn, epoch, batch_size, lr, NUM_THREADS);
-    printf("\n====== Training =======\n");
+
+                      printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
+    n = size/NUM_THREADS;
     for (int e = 0; e < epoch; e++)
     {
         start = 0 ; 
@@ -141,18 +142,17 @@ int main(int argc, char **argv)
         for ( int i=0; i < NUM_THREADS ; i ++) {
             threads_params[i].rnn = malloc(sizeof(SimpleRNN));
             copy_rnn(rnn, threads_params[i].rnn);
-            threads_params[i].drnn = malloc(sizeof(DerivedSimpleRNN));
-            initialize_rnn_derived(threads_params[i].rnn , threads_params[i].drnn);
+            threads_params[i].grad = malloc(sizeof(DerivedSimpleRNN));
+            initialize_rnn_derived(threads_params[i].rnn , threads_params[i].grad);
             threads_params[i].loss = 0.0;
             threads_params[i].acc = 0.0;
             threads_params[i].start = start;
             threads_params[i].end = end;
             r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
             if (r) {
-                printf("ERROR; pthread_create() return code : %d\n", r);
-                exit(-1);
+              printf("ERROR; pthread_create() return code : %d\n", r);
+              exit(-1);
             }
-            // printf("Thread %d has starded \n", i);
             start = end + 1;
             end = end + n;
             if (i == (NUM_THREADS-1) )
@@ -163,9 +163,11 @@ int main(int argc, char **argv)
 
         /* Free attribute and wait for the other threads */
         pthread_attr_destroy(&attr);
-        for(int t=0; t<NUM_THREADS; t++) {
+        for(int t=0; t<NUM_THREADS; t++) 
+        {
           r = pthread_join(threads[t], &status);
-          if (r) {
+          if (r) 
+          {
             printf("ERROR; return code from pthread_join() is %d\n", r);
             exit(-1);
           }

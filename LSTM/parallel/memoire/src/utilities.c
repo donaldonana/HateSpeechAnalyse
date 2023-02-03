@@ -778,10 +778,10 @@ void get_data(Data *data){
     FILE *fin = NULL;
     FILE *file = NULL;
 	FILE *stream = NULL;
-    fin = fopen("../../data/data.txt" , "r");
+    fin = fopen("../../../data/data.txt" , "r");
     if(fscanf(fin, "%d" , &data->xraw)){printf(" xraw : %d " , data->xraw);}
     if(fscanf(fin, "%d" , &data->xcol)){printf(" xcol : %d \n" , data->xcol);}
-    file = fopen("../../data/embedding.txt" , "r");
+    file = fopen("../../../data/embedding.txt" , "r");
 	if(fscanf(file, "%d" , &data->eraw)){printf(" eraw : %d " , data->eraw);}
     if( fscanf(file, "%d" ,&data->ecol)){printf(" ecol : %d \n" , data->ecol);}
 
@@ -819,7 +819,7 @@ void get_data(Data *data){
 
     }
 	// Y vector
-    stream = fopen("../../data/label.txt" , "r");
+    stream = fopen("../../../data/label.txt" , "r");
     if(fscanf(stream, "%d" , &data->xraw)){printf(" yraw : %d \n" , data->xraw);}
 	if (stream != NULL)
     {
