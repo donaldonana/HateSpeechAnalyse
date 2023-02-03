@@ -5,21 +5,6 @@
 #include "utils.h"
 
 
-typedef struct Data Data;
-struct Data
-{
-	int xraw;
-	int xcol;
-	int ecol;
-    int eraw;
-	int start_val;
-	int end_val;
-	int **X;
-    int *Y;
-    float **embedding;
-
-};
-
 
 typedef struct SimpleRNN SimpleRNN;
 struct SimpleRNN
@@ -58,18 +43,6 @@ struct DerivedSimpleRNN
 	float **temp3;
 };
 
-typedef struct dSimpleRNN dSimpleRNN;
-struct dSimpleRNN
-{
-	float *d_bh;
-	float *d_by;
-	float **d_Whx;
-	float **d_Whh;
-	float **d_Why;
-	
-};
-
-void training(int epoch, SimpleRNN *rnn, DerivedSimpleRNN *drnn, Data *data, int index) ;
 
 float testing(SimpleRNN *rnn, Data *data, int start, int end);
 
@@ -77,8 +50,7 @@ void forward(SimpleRNN *rnn, int *x, int n, float **embedding_matrix);
 
 void initialize_rnn(SimpleRNN *rnn, int input_size, int hidden_size, int output_size);
 
-void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, 
-DerivedSimpleRNN *drnn, dSimpleRNN *grnn);
+void backforward(SimpleRNN *rnn, int n, int idx, int *x, float **embedding_matrix, DerivedSimpleRNN *grad, SimpleRNN *AVGgradient);
 
 float accuracy(float acc, float y, float *y_pred);
 
@@ -92,23 +64,23 @@ void initialize_rnn_derived(SimpleRNN *rnn, DerivedSimpleRNN * drnn);
 
 void save_rnn_as_json(SimpleRNN *rnn, FILE *fichier);
 
-void get_data(Data *data, int nthread);
+void gradient_descent(SimpleRNN *rnn, SimpleRNN *AVGgradient, int n, float lr);
 
-void gradient_descent(SimpleRNN *rnn, dSimpleRNN *grnn, int n, float lr);
+void initialize_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient);
 
-void initialize_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
-
-void zero_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
+void zero_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient);
 
 void copy_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 
 void reinitialize_rnn(SimpleRNN *rnn, SimpleRNN *secondrnn);
 
-void somme_gradient( dSimpleRNN *grnn, SimpleRNN *slavernn);
+void somme_gradient(SimpleRNN *grad, SimpleRNN *slavernn);
 
-void modelUpdate(SimpleRNN *rnn, dSimpleRNN *grnn, int NUM_THREADS);
+void deallocate_rnn_gradient(SimpleRNN *rnn, SimpleRNN *AVGgradient);
 
-void deallocate_rnn_gradient(SimpleRNN *rnn, dSimpleRNN *grnn);
+void modelUpdate(SimpleRNN *rnn, SimpleRNN *grad, int NUM_THREADS);
+
+void print_summary(SimpleRNN* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
 
 

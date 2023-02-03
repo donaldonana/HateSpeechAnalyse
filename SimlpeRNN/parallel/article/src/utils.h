@@ -3,12 +3,28 @@
 #ifndef DEF_UTILS
 #define DEF_UTILS
 
-#include "simplernn.h"
 
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
  
+
+
+typedef struct Data Data;
+struct Data
+{
+	int xraw;
+	int xcol;
+	int ecol;
+    int eraw;
+	int start_val;
+	int end_val;
+	int **X;
+    int *Y;
+    float **embedding;
+
+};
+
 
 
 
@@ -45,9 +61,6 @@ void add_vect(float *r , float *a, float *b, int n);
 
 void mat_mul(float *r, float* a, float** b, int n, int p) ;
 
-void update_matrix_model( float **a , float **b, int row, int col, int n);
-
-void update_vect_model(float *a, float *b, int col , int n);
 
 void add_three_vect(float *r, float *a, float *b, float *c, int n);
 
@@ -65,9 +78,7 @@ void update_vect(float *r, float *a, float *b, int col , int n, float lr);
 
 void trans_mat(float **r, float **a, int row , int col);
 
-
 void data_for_plot(char *filename, int epoch, float *axis, char *axis_name);
-
 
 void add_matrix(float **r, float **a , float **b, int row, int col);
 
@@ -77,8 +88,13 @@ void matrix_strore_as_json(float **m, int row, int col, FILE *fo);
 
 void copy_mat(float **a, float **b, int row ,int col);
 
- 
-
 int ArgMax( float *y_pred);
+
+void update_matrix_model( float **a , float **b, int row, int col, int n);
+
+void update_vect_model(float *a, float *b, int col , int n);
+
+void get_data(Data *data, int nthread);
+
 
 #endif
