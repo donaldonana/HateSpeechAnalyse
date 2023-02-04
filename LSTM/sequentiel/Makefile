@@ -26,7 +26,7 @@ $(OBJ)/test.o: $(SRC)/test.c $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC)/test.c -o $(OBJ)/test.o -lm -lpthread
 
 app: ${OBJECTS} $(OBJ)/app.o $(HEADERS)
-	$(CC) -o $(BIN)/app.exe ${OBJECTS} $(OBJ)/app.o -lm -lpthread
+	$(CC) -o ./app.exe ${OBJECTS} $(OBJ)/app.o -lm -lpthread
 
 test: ${OBJECTS} $(OBJ)/test.o $(HEADERS)
 	$(CC) -o $(BIN)/test.exe ${OBJECTS} $(OBJ)/test.o -lm -lpthread
@@ -43,4 +43,4 @@ run-test: test
 	./$(BIN)/test.exe
 
 run-app: app
-	./$(BIN)/app.exe
+	./app.exe

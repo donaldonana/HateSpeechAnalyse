@@ -11,7 +11,7 @@
 // # define NUM_THREADS 2
 
 struct timeval start_t , end_t ;
-lstm_rnn* lstm;
+lstm_rnn *lstm;
 Data *data ;
 float lr;
 int MINI_BATCH_SIZE, NUM_THREADS, epoch  ;
@@ -20,13 +20,13 @@ pthread_mutex_t mutexRnn;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
-lstm_rnn* lstm;
-lstm_rnn* gradient  ;
-lstm_rnn* AVGgradient ;
-int start;
-int end;
-float loss;
-float acc;
+  lstm_rnn* lstm;
+  lstm_rnn* gradient  ;
+  lstm_rnn* AVGgradient ;
+  int start;
+  int end;
+  float loss;
+  float acc;
 };
 
 
@@ -68,37 +68,36 @@ void parse_input_args(int argc, char** argv)
 
 
 
-void *ThreadTrain (void *params) { // Code du thread
+void *ThreadTrain (void *params) // Code du thread
+{ 
   struct thread_param *mes_param ;
   int nb_traite = 0;
   mes_param = ( struct thread_param *) params ;
   mes_param->AVGgradient = e_calloc(1, sizeof(lstm_rnn));
   lstm_init_model(lstm->X, lstm->N, lstm->Y , mes_param->AVGgradient , 1);
-  double *h_prev = get_zero_vector(lstm->N);
-  double *c_prev = get_zero_vector(lstm->N);
-  lstm_values_cache **cache = alloc_cache_array(lstm->X, lstm->N, lstm->Y, data->xcol);
-
+   
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
-    lstm_forward(mes_param->lstm, data->X[i], h_prev, c_prev, cache, data);
-    lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), cache, mes_param->gradient);
+    lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
+    lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
     // mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->lstm->probs);
     nb_traite = nb_traite + 1; 
+
     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
       pthread_mutex_lock (&mutexRnn);
         mean_gradients(mes_param->AVGgradient, nb_traite);
         gradients_decend(lstm, mes_param->AVGgradient, lr);
         copy_lstm(lstm, mes_param->lstm);
-        lstm_zero_the_model(mes_param->AVGgradient);
       pthread_mutex_unlock (&mutexRnn);
       nb_traite = 0;
     }
+
     lstm_zero_the_model(mes_param->gradient);
-    set_vector_zero(h_prev, lstm->N);
-    set_vector_zero(c_prev, lstm->N);
+    set_vector_zero(lstm->h_prev, lstm->N);
+    set_vector_zero(lstm->c_prev, lstm->N);
 
   }
   lstm_free_model(mes_param->gradient);
@@ -110,7 +109,7 @@ void *ThreadTrain (void *params) { // Code du thread
 
 int main(int argc, char **argv)
 {
-    srand(time(NULL));
+    // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     data = malloc(sizeof(Data));
     get_data(data);
@@ -119,37 +118,43 @@ int main(int argc, char **argv)
     int n , r, end, start = 0 , size = 1000;
     int X = data->ecol , N = 64, Y = 2;
     float Loss , Acc ;
+    
+    // default parameters 
     lr = 0.01 ;
     epoch = 20;
     NUM_THREADS = 2;
     MINI_BATCH_SIZE = 1;
 
-    // parse_input_args(argc, argv);
-    n = size/NUM_THREADS;
+    parse_input_args(argc, argv);
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
+
     /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
     lstm = e_calloc(1, sizeof(lstm_rnn));
     lstm_init_model(X, N, Y , lstm, 0); 
-    // print_summary(lstm, epoch, batch_size, lr, NUM_THREADS);
+    print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-    printf("\n====== Training =======\n");
+                      printf("\n====== Training =======\n");
+
     gettimeofday(&start_t, NULL);
+    n = size/NUM_THREADS;
     for (int e = 0; e < epoch; e++)
     {
         start = 0 ; 
         end = n-1 ;
         Loss = Acc = 0.0 ;
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-        for ( int i=0; i < NUM_THREADS ; i ++) {
+        for ( int i=0; i < NUM_THREADS ; i ++) 
+        {
             threads_params[i].lstm = e_calloc(1, sizeof(lstm_rnn));
             lstm_init_model(X, N, Y , threads_params[i].lstm , 0);
+            copy_lstm(lstm, threads_params[i].lstm);
             threads_params[i].gradient = e_calloc(1, sizeof(lstm_rnn));
             lstm_init_model(X, N, Y , threads_params[i].gradient , 1);
-            copy_lstm(lstm, threads_params[i].lstm);
             threads_params[i].loss = 0.0;
             threads_params[i].acc = 0.0;
             threads_params[i].start = start;

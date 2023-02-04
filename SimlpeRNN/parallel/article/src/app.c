@@ -94,7 +94,7 @@ void *ThreadTrain (void *params) { // Code du thread
 
 int main(int argc, char **argv)
 {
-     // srand(time(NULL));
+    // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     data = malloc(sizeof(Data));
     get_data(data, 2);
