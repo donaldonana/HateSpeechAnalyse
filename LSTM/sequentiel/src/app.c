@@ -6,7 +6,11 @@
 #include "layers.h"
 #include <time.h>
 #include <string.h>
+#include <sys/time.h>
+
 #include <pthread.h>
+
+struct timeval start_t , end_t ;
 
 
 float lr;
@@ -52,6 +56,8 @@ int main(int argc, char **argv)
   Data *data  = malloc(sizeof(Data));
   get_data(data);
 
+    double totaltime;
+
   lr = 0.01;
   MINI_BATCH_SIZE = 1;
   int X = data->ecol, N = 64, Y = 2;
@@ -68,12 +74,18 @@ int main(int argc, char **argv)
 
 
       printf("\n====== Training =======\n");
-
+      
+  gettimeofday(&start_t, NULL);
   for (int e = 0; e < epoch ; e++)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
     lstm_training(lstm, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
   }
+  
+  gettimeofday(&end_t, NULL);
+  totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
+  printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+    
 
   lstm_free_model(lstm);
   lstm_free_model(gradient);

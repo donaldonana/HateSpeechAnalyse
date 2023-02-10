@@ -68,7 +68,7 @@ void deallocate_dynamic_int_matrix(int **matrix, int row);
 void 	vectors_add(double*, double*, int);
 void 	vectors_substract(double*, double*, int);
 void 	vectors_add_scalar_multiply(double*, double*, int, double);
-void 	vectors_scalar_multiply(double*, double, int);
+void 	vectors_mean_multiply(double*, double, int);
 void 	vectors_substract_scalar_multiply(double*, double*, int, double);
 void 	vectors_add_scalar(double*, double, int );
 void 	vectors_div(double*, double*, int);

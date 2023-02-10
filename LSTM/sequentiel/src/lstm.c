@@ -341,17 +341,17 @@ void sum_gradients(lstm_rnn* gradients, lstm_rnn* gradients_entry)
 
 void mean_gradients(lstm_rnn* gradients, double d)
 {
-  vectors_scalar_multiply(gradients->Wy, d,  gradients->Y * gradients->N);
-  vectors_scalar_multiply(gradients->Wi, d,  gradients->N * gradients->S);
-  vectors_scalar_multiply(gradients->Wc, d,  gradients->N * gradients->S);
-  vectors_scalar_multiply(gradients->Wo, d,  gradients->N * gradients->S);
-  vectors_scalar_multiply(gradients->Wf, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wy, d,  gradients->Y * gradients->N);
+  vectors_mean_multiply(gradients->Wi, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wc, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wo, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wf, d,  gradients->N * gradients->S);
 
-  vectors_scalar_multiply(gradients->by, d, gradients->Y);
-  vectors_scalar_multiply(gradients->bi, d, gradients->N);
-  vectors_scalar_multiply(gradients->bc, d, gradients->N);
-  vectors_scalar_multiply(gradients->bf, d, gradients->N);
-  vectors_scalar_multiply(gradients->bo, d, gradients->N);
+  vectors_mean_multiply(gradients->by, d, gradients->Y);
+  vectors_mean_multiply(gradients->bi, d, gradients->N);
+  vectors_mean_multiply(gradients->bc, d, gradients->N);
+  vectors_mean_multiply(gradients->bf, d, gradients->N);
+  vectors_mean_multiply(gradients->bo, d, gradients->N);
 
 
 }
