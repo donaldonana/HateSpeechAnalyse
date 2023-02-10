@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     n = size/NUM_THREADS;
 
   
-    while ( (e < epoch) || (stop == 1) )
+    while ( (e < epoch) & (stop == 1) )
     {
         start = 0 ; 
         end = n-1 ;

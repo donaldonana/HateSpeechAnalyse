@@ -74,7 +74,6 @@ typedef struct lstm_rnn
   double* c_prev;
   double* h_prev;
 
-
 } lstm_rnn;
 
 

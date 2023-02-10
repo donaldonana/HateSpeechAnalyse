@@ -12,9 +12,20 @@
 */
 #include "utilities.h"
 
-
-
 // used on contigous vectors
+
+
+// A = 1 - A
+void one_minus_vector(double* A, int L)
+{
+  int l = 0;
+  while (l<L)
+  {
+    A[l] =  1 - A[l];
+    ++l;
+  }
+}
+
 void  vectors_add(double* A, double* B, int L)
 {
   int l = 0;
@@ -51,7 +62,7 @@ void  vectors_add_scalar_multiply(double* A, double* B, int L, double s)
     ++l;
   }
 }
-
+// A = A - B
 void  vectors_substract(double* A, double* B, int L)
 {
   int l = 0;
@@ -664,8 +675,6 @@ size_t  e_alloc_total()
 {
   return alloc_mem_tot;
 }
-
-
 
 
 double **allocate_dynamic_float_matrix(int row, int col)

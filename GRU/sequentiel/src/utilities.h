@@ -69,6 +69,7 @@ void 	vectors_add(double*, double*, int);
 void 	vectors_substract(double*, double*, int);
 void 	vectors_add_scalar_multiply(double*, double*, int, double);
 void 	vectors_scalar_multiply(double*, double, int);
+void    one_minus_vector(double* A, int L);
 void 	vectors_substract_scalar_multiply(double*, double*, int, double);
 void 	vectors_add_scalar(double*, double, int );
 void 	vectors_div(double*, double*, int);

@@ -53,6 +53,26 @@ void  fully_connected_forward(double* Y, double* A, double* X, double* b, int R,
   }
 
 }
+
+void mat_mul(double* A, double* B, double* W, int R, int C){
+
+  int i = 0, n = 0;
+  while ( i < C ) {
+    n = 0;
+
+    A[i] = 0.0;
+    while ( n < R ) {
+      A[i] += W[n * C + i] * B[n];  
+      ++n;
+    }
+
+    ++i;
+  }
+
+
+}
+
+
 //    Y = AX + b        dldY,       A,     X,        &dldA,    &dldX,    &dldb   Rows (A), Columns (A)
 void  fully_connected_backward(double* dldY, double* A, double* X, double* dldA,
   double* dldX, double* dldb, int R, int C)
@@ -83,7 +103,7 @@ void  fully_connected_backward(double* dldY, double* A, double* X, double* dldA,
 
     dldX[i] = 0.0;
     while ( n < R ) {
-      dldX[i] += A[n * C + i] * dldY[n];
+      dldX[i] += A[n * C + i] * dldY[n];  
       ++n;
     }
 
@@ -98,7 +118,7 @@ double cross_entropy(double* probabilities, int correct)
 
 // Dealing with softmax layer, forward and backward
 //                &P,   Y,    features
-void  softmax_layers_forward(double* P, double* Y, int F, double temperature)  
+void  softmax_layers_forward(double* P, double* Y, int F)  
 {
   int f = 0;
   double sum = 0;
@@ -117,7 +137,7 @@ void  softmax_layers_forward(double* P, double* Y, int F, double temperature)
 #endif
 
   while ( f < F ) {
-    cache[f] = exp(Y[f] / temperature);
+    cache[f] = exp(Y[f] );
     sum += cache[f];
     ++f;
   }

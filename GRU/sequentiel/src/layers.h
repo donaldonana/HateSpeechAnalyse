@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+
+
+void mat_mul(double* A, double* B, double* W, int R, int C);
+
 /*! \file layers.h
     \brief Various mathematical functions
     
@@ -31,7 +35,7 @@ void fully_connected_backward(double* dldY, double* A, double* X,double* dldA,
 * @param temperature calibration of softmax, the lower the spikier
 * @param F len ( Y )  
 */
-void softmax_layers_forward(double* P, double* Y, int F, double temperature);
+void softmax_layers_forward(double* P, double* Y, int F);
 /** Softmax layer backward propagation
 *
 * @param P sum ( exp(y/temperature) ) for y in Y
