@@ -80,6 +80,7 @@ int main(int argc, char **argv)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
     rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
+    // rnn_validation(rnn, data);
   }
   
   gettimeofday(&end_t, NULL);

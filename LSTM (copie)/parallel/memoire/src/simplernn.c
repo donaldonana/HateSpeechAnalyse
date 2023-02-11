@@ -170,36 +170,7 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
   vectors_add(gradients->bh, gradients_entry->bh, gradients->N);
 }
 
-
-void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data)
-{
-  printf("--->Training \n ");
-  float Loss = 0.0;
-  int nb_traite  = 0 ; 
-  for (int i = 0; i < 1000; i++)
-  {
-    // forward
-    rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs);
-    // backforward
-    rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
-    sum_gradients(AVGgradient, gradient);
-      
-    nb_traite = nb_traite + 1 ;
-    if (nb_traite == mini_batch_size || i == 999)
-    {
-      gradients_decend(rnn, AVGgradient, lr, nb_traite);
-      rnn_zero_the_model(AVGgradient);
-      nb_traite = 0 ;
-    }
-    rnn_zero_the_model(gradient);
-  }
-  Loss = Loss/1000;
-  printf("**Loss : %lf \n" , Loss);    
-
-}
-
-
+ 
 void rnn_validation(SimpleRnn* rnn, Data* data)
 {
   printf("--->Validation \n");    
@@ -217,16 +188,17 @@ void rnn_validation(SimpleRnn* rnn, Data* data)
 }
 
 
-void print_summary(SimpleRnn* lstm, int epoch, int mini_batch, float lr)
+void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS)
 {
 	printf("\n ============= Model Summary ========== \n");
 	printf(" Model : SIMPLE RNNs \n");
 	printf(" Epoch Max  : %d \n", epoch);
 	printf(" Mini batch : %d \n", mini_batch);
 	printf(" Learning Rate : %f \n", lr);
-	printf(" Input Size  : %d \n", lstm->X);
-	printf(" Hiden Size  : %d \n", lstm->N);
-	printf(" output Size  : %d \n",lstm->Y);
+	printf(" Num. Thread  : %d \n", NUM_THREADS);
+	printf(" Input Size  : %d \n", rnn->X);
+	printf(" Hiden Size  : %d \n", rnn->N);
+	printf(" output Size  : %d \n",rnn->Y);
 }
 
 void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l)
@@ -247,4 +219,17 @@ void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache )
   cache->X = get_zero_vector(S);
 }
 
+void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn)
+{
+
+  // secondrnn->X = lstm->X;  
+  // secondrnn->N = lstm->N;  
+  // secondrnn->S = lstm->S;  
+  // secondrnn->Y = lstm->Y;  
+  copy_vector(secondrnn->Wh, rnn->Wh, rnn->N*rnn->S);
+  copy_vector(secondrnn->Wy, rnn->Wy, rnn->Y*rnn->N);
+  copy_vector(secondrnn->bh, rnn->bh, rnn->N);
+  copy_vector(secondrnn->by, rnn->by, rnn->Y);
+
+}
 

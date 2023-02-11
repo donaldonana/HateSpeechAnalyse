@@ -78,11 +78,13 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry);
 
 void mean_gradients(SimpleRnn* gradients, double d);
 
-void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr);
+void print_summary(SimpleRnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
 void rnn_validation(SimpleRnn* rnn, Data* data);
 
 void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache);
+
+void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn);
 
 
 #endif

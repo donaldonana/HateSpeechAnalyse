@@ -35,11 +35,14 @@ void  vectors_add_scalar(double* A, double B, int L)
 
 void  vectors_mean_multiply(double* A, double d, int L)
 {
+  double mean = 1/(double)d ;
+
   int l = 0;
   while ( l < L ) {
-    A[l] *= d;
+    A[l] *= mean;
     ++l;
   }
+  
 }
 
 // A = A + (B * s)
@@ -83,7 +86,7 @@ void  vectors_substract_scalar_multiply(double* A, double* B, int L, double s)
 {
   int l = 0;
   while ( l < L ) {
-    A[l] -= B[l]*s;
+    A[l] -= B[l]*s*0.5;
     ++l;
   }
 }
@@ -779,7 +782,7 @@ void get_data(Data *data){
 	int b ;
     FILE *fin = NULL;
     FILE *file = NULL;
-	  FILE *stream = NULL;
+	FILE *stream = NULL;
     fin = fopen("../../../data/data.txt" , "r");
     if(fscanf(fin, "%d" , &data->xraw)){}
     if(fscanf(fin, "%d" , &data->xcol))
@@ -848,6 +851,5 @@ void get_data(Data *data){
 	fclose(stream);
 
 }
-
 
 
