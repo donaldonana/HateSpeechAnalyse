@@ -1,6 +1,4 @@
-
 #include "simplernn.h"
-
 
 
 // Inputs, Neurons, Outputs, &lstm model, zeros
@@ -231,5 +229,35 @@ void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn)
   copy_vector(secondrnn->bh, rnn->bh, rnn->N);
   copy_vector(secondrnn->by, rnn->by, rnn->Y);
 
+}
+
+void update_vect_model(double *a, double *b, int l , int n)
+{
+	float mean = 1/(float)n ;
+	for (int i = 0; i < l; i++)
+	{
+		a[i]= b[i]*mean ;
+
+	}
+
+}
+ 
+void modelUpdate(SimpleRnn *rnn, SimpleRnn *grad, int NUM_THREADS)
+{
+	update_vect_model(rnn->Wh, grad->Wh, rnn->S*rnn->N, NUM_THREADS);
+	update_vect_model(rnn->Wy, grad->Wy, rnn->Y*rnn->N, NUM_THREADS);
+	update_vect_model(rnn->bh, grad->bh, rnn->N, NUM_THREADS);
+	update_vect_model(rnn->by, grad->by, rnn->Y, NUM_THREADS);
+
+	rnn_zero_the_model(grad);
+}
+
+void somme_gradient(SimpleRnn *grad, SimpleRnn *slavernn)
+{
+
+vectors_add(grad->Wh, slavernn->Wh, slavernn->S*slavernn->N);
+vectors_add(grad->Wy, slavernn->Wy, slavernn->Y*slavernn->N);
+vectors_add(grad->bh, slavernn->bh, slavernn->N);
+vectors_add(grad->by, slavernn->by, slavernn->Y);
 }
 

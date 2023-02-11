@@ -381,8 +381,8 @@ void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm)
   copy_vector(secondlstm->by, lstm->by, lstm->Y);
 
 }
-
  
+
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){
 
   lstm->cache = malloc((l)*sizeof(lstm_cache));
@@ -407,4 +407,53 @@ void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_
 
 
 }
+
+void update_vect_model(double *a, double *b, int l , int n)
+{
+	float mean = 1/(float)n ;
+	for (int i = 0; i < l; i++)
+	{
+		a[i]= b[i]*mean ;
+
+	}
+
+}
+ 
+void modelUpdate(lstm_rnn *lstm, lstm_rnn *grad, int NUM_THREADS)
+{
+
+  update_vect_model(lstm->Wc, grad->Wc, lstm->S*lstm->N, NUM_THREADS);
+  update_vect_model(lstm->Wf, grad->Wf, lstm->S*lstm->N, NUM_THREADS);
+  update_vect_model(lstm->Wi, grad->Wi, lstm->S*lstm->N, NUM_THREADS);
+  update_vect_model(lstm->Wo, grad->Wo, lstm->S*lstm->N, NUM_THREADS);
+  update_vect_model(lstm->Wy, grad->Wy, lstm->Y*lstm->N, NUM_THREADS);
+
+  update_vect_model(lstm->bc, grad->bc, lstm->N, NUM_THREADS);
+  update_vect_model(lstm->bf, grad->bf, lstm->N, NUM_THREADS);
+  update_vect_model(lstm->bi, grad->bi, lstm->N, NUM_THREADS);
+  update_vect_model(lstm->bo, grad->bo, lstm->N, NUM_THREADS);
+  update_vect_model(lstm->by, grad->by, lstm->Y, NUM_THREADS);
+
+	lstm_zero_the_model(grad);
+}
+
+
+void somme_gradient(lstm_rnn *grad, lstm_rnn *slave)
+{
+
+vectors_add(grad->Wc, slave->Wc, slave->S*slave->N);
+vectors_add(grad->Wf, slave->Wf, slave->S*slave->N);
+vectors_add(grad->Wi, slave->Wi, slave->S*slave->N);
+vectors_add(grad->Wo, slave->Wo, slave->S*slave->N);
+vectors_add(grad->Wy, slave->Wy, slave->Y*slave->N);
+
+vectors_add(grad->bc, slave->bc, slave->N);
+vectors_add(grad->bf, slave->bf, slave->N);
+vectors_add(grad->bi, slave->bi, slave->N);
+vectors_add(grad->bo, slave->bo, slave->N);
+vectors_add(grad->by, slave->by, slave->Y);
+
+}
+
+
 

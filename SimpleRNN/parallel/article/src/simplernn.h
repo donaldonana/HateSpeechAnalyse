@@ -86,5 +86,11 @@ void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache);
 
 void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn);
 
+void update_vect_model(double *a, double *b, int l , int n);
+
+void modelUpdate(SimpleRnn *rnn, SimpleRnn *grad, int NUM_THREADS);
+
+void somme_gradient(SimpleRnn *grad, SimpleRnn *slavernn);
+
 
 #endif

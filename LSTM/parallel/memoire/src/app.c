@@ -78,21 +78,22 @@ void *ThreadTrain (void *params) // Code du thread
    
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
+    // forward
     lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
+    // compute loss
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
+    // backforward
     lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
-    // mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->lstm->probs);
     nb_traite = nb_traite + 1; 
 
     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
       pthread_mutex_lock (&mutexRnn);
-        mean_gradients(mes_param->AVGgradient, nb_traite);
-        gradients_decend(lstm, mes_param->AVGgradient, lr);
+        gradients_decend(lstm, mes_param->AVGgradient, lr, nb_traite);
+        nb_traite = 0;
         copy_lstm(lstm, mes_param->lstm);
       pthread_mutex_unlock (&mutexRnn);
-      nb_traite = 0;
     }
 
     lstm_zero_the_model(mes_param->gradient);
@@ -138,14 +139,14 @@ int main(int argc, char **argv)
     lstm_init_model(X, N, Y , lstm, 0); 
     print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-                      printf("\n====== Training =======\n");
+                printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
     for (int e = 0; e < epoch; e++)
     {
         start = 0 ; 
-        end = n-1 ;
+        end = n ;
         Loss = Acc = 0.0 ;
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
         for ( int i=0; i < NUM_THREADS ; i ++) 

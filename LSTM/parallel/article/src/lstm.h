@@ -108,5 +108,11 @@ void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm);
 
 lstm_cache*  lstm_cache_container_init(int X, int N, int Y);
 
+void somme_gradient(lstm_rnn *grad, lstm_rnn *slave);
+
+void modelUpdate(lstm_rnn *lstm, lstm_rnn *grad, int NUM_THREADS);
+
+void update_vect_model(double *a, double *b, int l , int n);
+
 
 #endif
