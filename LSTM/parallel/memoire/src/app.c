@@ -103,7 +103,6 @@ void *ThreadTrain (void *params) // Code du thread
   }
   lstm_free_model(mes_param->gradient);
   lstm_free_model(mes_param->AVGgradient);
-  lstm_free_model(mes_param->lstm);
 
   pthread_exit (NULL);
 }
@@ -182,8 +181,6 @@ int main(int argc, char **argv)
             exit(-1);
           }
           Loss = Loss + threads_params[t].loss ;
-          // Acc = Acc + threads_params[t].acc ;
-          // printf("Main: thread completed %d an loss = %f and Accuracy = %f\n",t, (threads_params[t].loss)/n, (threads_params[t].acc)/n);
         }
 
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
