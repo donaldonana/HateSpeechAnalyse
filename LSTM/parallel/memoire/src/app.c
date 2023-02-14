@@ -115,7 +115,7 @@ int main(int argc, char **argv)
     get_data(data);
     double totaltime;
     void *status;
-    int n , r, end, start = 0 , size = 1000;
+    int n , r, end, start = 0 , size = 4460;
     int X = data->ecol , N = 64, Y = 2;
     float Loss , Acc ;
     

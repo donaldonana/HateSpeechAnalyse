@@ -360,7 +360,7 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
 
     float Loss = 0.0;
     int nb_traite  = 0 ; 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 4460; i++)
     {
       // forward
       lstm_forward(lstm, data->X[i], lstm->cache, data);
@@ -370,7 +370,7 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       sum_gradients(AVGgradient, gradient);
       
       nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 999)
+      if (nb_traite == mini_batch_size || i == 4459)
       {
         mean_gradients(AVGgradient, nb_traite);
         // update
@@ -382,7 +382,7 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       set_vector_zero(lstm->h_prev, lstm->N);
       set_vector_zero(lstm->c_prev, lstm->N);
     }
-    Loss = Loss/1000;
+    Loss = Loss/4450;
     printf("%lf \n" , Loss);    
 
 }
