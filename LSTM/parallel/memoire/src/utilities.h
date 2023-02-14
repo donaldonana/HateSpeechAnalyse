@@ -122,6 +122,10 @@ void 	matrix_read(double **, int, int, FILE *);
 void 	vector_read_ascii(double *, int, FILE *);
 void 	vector_store_ascii(double *, int, FILE *);
 
+float accuracy(float acc, double y, double *y_pred);
+
+int ArgMax(double *y_pred);
+
 // Memory
 void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();

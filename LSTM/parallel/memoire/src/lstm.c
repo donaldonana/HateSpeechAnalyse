@@ -382,6 +382,55 @@ void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm)
 
 }
 
+
+void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
+{
+  FILE * fp;
+
+  fp = fopen(filename, "w");
+
+  if ( fp == NULL ) {
+    printf("Failed to open file: %s for writing.\n", filename);
+    return;
+  }
+ 
+  
+    fprintf(fp, "{");
+    fprintf(fp, "\n\t\"InputSize \": %d",  lstm->X);
+    fprintf(fp, ",\n\t\"HiddenSize \": %d", lstm->N);
+    fprintf(fp, ",\n\t\"OutputSize \": %d", lstm->Y);
+
+    fprintf(fp, ",\n\t\"Wy\": ");
+    vector_store_as_matrix_json(lstm->Wy, lstm->Y, lstm->N, fp);
+    fprintf(fp, ",\n\t\"Wi\": ");
+    vector_store_as_matrix_json(lstm->Wi, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wc\": ");
+    vector_store_as_matrix_json(lstm->Wc, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wo\": ");
+    vector_store_as_matrix_json(lstm->Wo, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wf\": ");
+    vector_store_as_matrix_json(lstm->Wf, lstm->N, lstm->S, fp);
+
+    fprintf(fp, ",\n\t\"by\": ");
+    vector_store_json(lstm->by, lstm->Y, fp);
+    fprintf(fp, ",\n\t\"bi\": ");
+    vector_store_json(lstm->bi, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bc\": ");
+    vector_store_json(lstm->bc, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bf\": ");
+    vector_store_json(lstm->bf, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bo\": ");
+    vector_store_json(lstm->bo, lstm->N, fp);
+
+    fprintf(fp, "\n}");
+
+
+
+  fclose(fp);
+
+}
+
+
  
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){
 

@@ -106,6 +106,8 @@ void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_
 
 void copy_lstm(lstm_rnn* lstm, lstm_rnn* secondlstm);
 
+void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char *filename);
+
 lstm_cache*  lstm_cache_container_init(int X, int N, int Y);
 
 

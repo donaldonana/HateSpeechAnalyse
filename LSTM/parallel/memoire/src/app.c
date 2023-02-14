@@ -82,6 +82,8 @@ void *ThreadTrain (void *params) // Code du thread
     lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
     // compute loss
     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
+    // compute accuracy training
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs);
     // backforward
     lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
@@ -115,6 +117,7 @@ int main(int argc, char **argv)
     get_data(data);
     double totaltime;
     void *status;
+    char filaname[] = "lstm.json";
     int n , r, end, start = 0 , size = 4460;
     int X = data->ecol , N = 64, Y = 2;
     float Loss , Acc ;
@@ -181,9 +184,13 @@ int main(int argc, char **argv)
             exit(-1);
           }
           Loss = Loss + threads_params[t].loss ;
+          Acc  = Acc + threads_params[t].ac ;
+
         }
 
-        printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
+        printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);   
+
+        lstm_store_net_layers_as_json(lstm, filaname); 
           
     }
 
