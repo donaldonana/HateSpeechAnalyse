@@ -364,7 +364,10 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
     {
       // forward
       lstm_forward(lstm, data->X[i], lstm->cache, data);
+      // Compute loss
       Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs);
+      // Compute accuracy
+      
       // backforward
       lstm_backforward(lstm, data->Y[i], (data->xcol-1), lstm->cache, gradient);
       sum_gradients(AVGgradient, gradient);
@@ -382,7 +385,7 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       set_vector_zero(lstm->h_prev, lstm->N);
       set_vector_zero(lstm->c_prev, lstm->N);
     }
-    Loss = Loss/4450;
+    Loss = Loss/4460;
     printf("%lf \n" , Loss);    
 
 }

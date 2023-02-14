@@ -771,6 +771,34 @@ float random_normal()
 
 
 
+float accuracy(float acc, double y, double *y_pred)
+{
+	int idx ;
+	idx = ArgMax(y_pred);
+
+	if (idx == y)
+	{
+		acc = acc + 1 ;
+	}
+	return acc;
+}
+
+ 
+int ArgMax( double *y_pred)
+{
+	int indMax = 0;
+	if (y_pred[1] > y_pred[0])
+	{
+		indMax = 1;
+	}
+	return indMax ;
+
+}
+
+
+
+
+
 void get_data(Data *data){
 
   printf("\n ============= Data Summary ========== \n");

@@ -341,19 +341,22 @@ void mean_gradients(gru_rnn* gradients, double d)
 
 void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int mini_batch_size, float lr, Data* data){
 
-    float Loss = 0.0;
-    int nb_traite  = 0 ; 
-    for (int i = 0; i < 1000; i++)
+    float Loss = 0.0, acc = 0.0;
+    int nb_traite  = 0 , size = 4460 ;
+    for (int i = 0; i < 4460; i++)
     {
       // forward
       gru_forward(gru, data->X[i], gru->cache, data);
+      // Compute loss
       Loss = Loss + binary_loss_entropy(data->Y[i], gru->probs);
+      // Compute accuracy
+      acc = accuracy(acc, data->Y[i], gru->probs);
       // backforward
       gru_backforward(gru, data->Y[i], (data->xcol-1), gru->cache, gradient);
       sum_gradients(AVGgradient, gradient);
       
       nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 999)
+      if (nb_traite == mini_batch_size || i == 4459)
       {
         mean_gradients(AVGgradient, nb_traite);
         // update
@@ -364,8 +367,8 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       gru_zero_the_model(gradient);
       set_vector_zero(gru->h_prev, gru->N);
     }
-    Loss = Loss/1000;
-    printf("%lf \n" , Loss);    
+    printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, acc/size);   
+   
 
 }
 
@@ -382,7 +385,7 @@ void alloc_cache_array(gru_rnn* lstm, int X, int N, int Y, int l){
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr){
 
 	printf("\n ============= Model Summary ========== \n");
-	printf(" Model : Long Short Time Memory (GRU) RNNs \n");
+	printf(" Model : Gated Recurrent Unit (GRU) RNNs \n");
 	printf(" Epoch Max  : %d \n", epoch);
 	printf(" Mini batch : %d \n", mini_batch);
 	printf(" Learning Rate : %f \n", lr);

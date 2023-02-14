@@ -126,6 +126,9 @@ void 	vector_store_ascii(double *, int, FILE *);
 void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();
 
+float accuracy(float acc, double y, double *y_pred);
+
+int ArgMax(double *y_pred);
 
 
 /* uniform distribution, (0..1] */

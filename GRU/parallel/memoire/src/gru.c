@@ -326,15 +326,15 @@ void sum_gradients(gru_rnn* gradients, gru_rnn* gradients_entry)
 
 void mean_gradients(gru_rnn* gradients, double d)
 {
-  vectors_scalar_multiply(gradients->Wy, d,  gradients->Y * gradients->N);
-  vectors_scalar_multiply(gradients->Wr, d,  gradients->N * gradients->S);
-  vectors_scalar_multiply(gradients->Wz, d,  gradients->N * gradients->S);
-  vectors_scalar_multiply(gradients->Wh, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wy, d,  gradients->Y * gradients->N);
+  vectors_mean_multiply(gradients->Wr, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wz, d,  gradients->N * gradients->S);
+  vectors_mean_multiply(gradients->Wh, d,  gradients->N * gradients->S);
 
-  vectors_scalar_multiply(gradients->by, d, gradients->Y);
-  vectors_scalar_multiply(gradients->br, d, gradients->N);
-  vectors_scalar_multiply(gradients->bh, d, gradients->N);
-  vectors_scalar_multiply(gradients->bz, d, gradients->N);
+  vectors_mean_multiply(gradients->by, d, gradients->Y);
+  vectors_mean_multiply(gradients->br, d, gradients->N);
+  vectors_mean_multiply(gradients->bh, d, gradients->N);
+  vectors_mean_multiply(gradients->bz, d, gradients->N);
 
 
 }
@@ -343,7 +343,7 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
 
     float Loss = 0.0;
     int nb_traite  = 0 ; 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 4460; i++)
     {
       // forward
       gru_forward(gru, data->X[i], gru->cache, data);
@@ -353,7 +353,7 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       sum_gradients(AVGgradient, gradient);
       
       nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 999)
+      if (nb_traite == mini_batch_size || i == 4459)
       {
         mean_gradients(AVGgradient, nb_traite);
         // update
@@ -364,7 +364,7 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       gru_zero_the_model(gradient);
       set_vector_zero(gru->h_prev, gru->N);
     }
-    Loss = Loss/1000;
+    Loss = Loss/4460;
     printf("%lf \n" , Loss);    
 
 }
@@ -382,7 +382,7 @@ void alloc_cache_array(gru_rnn* lstm, int X, int N, int Y, int l){
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr){
 
 	printf("\n ============= Model Summary ========== \n");
-	printf(" Model : Long Short Time Memory (LSTM) RNNs \n");
+	printf(" Model : Gated Recurrent Unit (GRU) RNNs \n");
 	printf(" Epoch Max  : %d \n", epoch);
 	printf(" Mini batch : %d \n", mini_batch);
 	printf(" Learning Rate : %f \n", lr);

@@ -44,11 +44,13 @@ void  vectors_add_scalar(double* A, double B, int L)
   }
 }
 
-void  vectors_scalar_multiply(double* A, double d, int L)
+void  vectors_mean_multiply(double* A, double d, int L)
 {
+
+  double mean = 1/(double)d ;
   int l = 0;
   while ( l < L ) {
-    A[l] *= d;
+    A[l] *= mean;
     ++l;
   }
 }

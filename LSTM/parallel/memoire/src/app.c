@@ -184,13 +184,13 @@ int main(int argc, char **argv)
             exit(-1);
           }
           Loss = Loss + threads_params[t].loss ;
-          Acc  = Acc + threads_params[t].ac ;
+          Acc  = Acc + threads_params[t].acc ;
 
         }
 
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);   
 
-        lstm_store_net_layers_as_json(lstm, filaname); 
+        // lstm_store_net_layers_as_json(lstm, filaname); 
           
     }
 
