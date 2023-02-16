@@ -272,18 +272,22 @@ void gru_cache_container_free(gru_cache* cache_to_be_freed)
 
 
 // A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
-void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr) {
+void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr, int n) {
+
+  float LR = ( 1/(float)n )*lr;
 
   // Computing A = A - alpha * m
-  vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, lr);
-  vectors_substract_scalar_multiply(model->Wr, gradients->Wr, model->N * model->S, lr);
-  vectors_substract_scalar_multiply(model->Wh, gradients->Wh, model->N * model->S, lr);
-  vectors_substract_scalar_multiply(model->Wz, gradients->Wz, model->N * model->S, lr);
+  vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, LR);
+  vectors_substract_scalar_multiply(model->Wr, gradients->Wr, model->N * model->S, LR);
+  vectors_substract_scalar_multiply(model->Wh, gradients->Wh, model->N * model->S, LR);
+  vectors_substract_scalar_multiply(model->Wz, gradients->Wz, model->N * model->S, LR);
 
-  vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, lr);
-  vectors_substract_scalar_multiply(model->bz, gradients->bz, model->N, lr);
-  vectors_substract_scalar_multiply(model->bh, gradients->bh, model->N, lr);
-  vectors_substract_scalar_multiply(model->br, gradients->br, model->N, lr);
+  vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, LR);
+  vectors_substract_scalar_multiply(model->bz, gradients->bz, model->N, LR);
+  vectors_substract_scalar_multiply(model->bh, gradients->bh, model->N, LR);
+  vectors_substract_scalar_multiply(model->br, gradients->br, model->N, LR);
+  
+  gru_zero_the_model(gradients);
 }
 
 
@@ -358,10 +362,8 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       nb_traite = nb_traite + 1 ;
       if (nb_traite == mini_batch_size || i == 4459)
       {
-        mean_gradients(AVGgradient, nb_traite);
         // update
-        gradients_decend(gru, AVGgradient, lr);
-        gru_zero_the_model(AVGgradient);
+        gradients_decend(gru, AVGgradient, lr, nb_traite);
         nb_traite = 0 ;
       }
       gru_zero_the_model(gradient);

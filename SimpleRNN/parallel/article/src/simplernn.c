@@ -146,6 +146,8 @@ void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n)
   vectors_substract_scalar_multiply(model->Wh, gradients->Wh, model->N * model->S, LR);
   vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, LR);
   vectors_substract_scalar_multiply(model->bh, gradients->bh, model->N, LR);
+  
+  rnn_zero_the_model(gradients);
 }
 
 

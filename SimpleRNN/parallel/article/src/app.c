@@ -83,6 +83,8 @@ void *ThreadTrain (void *params) // Code du thread
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
     // compute loss
     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->probs);
+    // compute accuracy training
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs);
     // backforward
     rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
@@ -93,7 +95,6 @@ void *ThreadTrain (void *params) // Code du thread
       // update the central LSTM with mutex
       pthread_mutex_lock(&mutexRnn);
         gradients_decend(mes_param->rnn, mes_param->AVGgradient, lr, nb_traite);
-        rnn_zero_the_model(mes_param->AVGgradient);
         nb_traite = 0 ;
       pthread_mutex_unlock(&mutexRnn);
     }
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
     get_data(data);
     double totaltime;
     void *status;
-    int n , r, end, start = 0 , size = 1000;
+    int n , r, end, start = 0 , size = 4460;
     int X = data->ecol , N = 64, Y = 2;
     float Loss , Acc ;
     
@@ -184,7 +185,7 @@ int main(int argc, char **argv)
           }
           somme_gradient(AVGgradient, threads_params[t].rnn);
           Loss = Loss + threads_params[t].loss ;
-          // Acc = Acc + threads_params[t].acc ;
+          Acc  = Acc  + threads_params[t].acc ;
         }
         modelUpdate(rnn, AVGgradient, NUM_THREADS);
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "utilities.h"
-#include "simplernn.h"
+#include "gru.h"
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 // # define NUM_THREADS 2
 
 struct timeval start_t , end_t ;
-SimpleRnn *rnn;
+gru_rnn *gru;
 Data *data ;
 float lr;
 int MINI_BATCH_SIZE, NUM_THREADS, epoch  ;
@@ -20,9 +20,9 @@ pthread_mutex_t mutexRnn;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
-  SimpleRnn* rnn;
-  SimpleRnn* gradient  ;
-  SimpleRnn* AVGgradient ;
+  gru_rnn* gru;
+  gru_rnn* gradient  ;
+  gru_rnn* AVGgradient ;
   int start;
   int end;
   float loss;
@@ -71,40 +71,38 @@ void parse_input_args(int argc, char** argv)
 void *ThreadTrain (void *params) // Code du thread
 { 
   struct thread_param *mes_param ;
-  mes_param = ( struct thread_param *) params ;
-  mes_param->AVGgradient = e_calloc(1, sizeof(SimpleRnn));
-  rnn_init_model(rnn->X, rnn->N, rnn->Y , mes_param->AVGgradient , 1);
-
   int nb_traite = 0;
-  
-  for (int i = mes_param->start ; i < mes_param->end; i++)
+  mes_param = ( struct thread_param *) params ;
+  mes_param->AVGgradient = e_calloc(1, sizeof(gru_rnn));
+  gru_init_model(gru->X, gru->N, gru->Y , mes_param->AVGgradient , 1);
+   
+  for (int i = mes_param->start; i < mes_param->end; i++)
   {
     // forward
-    rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
+    gru_forward(mes_param->gru, data->X[i], mes_param->gru->cache, data);
     // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->probs);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs);
     // compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs);
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs);
     // backforward
-    rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);
+    gru_backforward(mes_param->gru, data->Y[i], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
 
-    if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end - 1) )
+     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
-      // update the central rnnn
-      pthread_mutex_lock(&mutexRnn);
-        gradients_decend(rnn, mes_param->AVGgradient, lr, nb_traite);
-        copy_rnn(rnn, mes_param->rnn);
-        nb_traite = 0 ;
-      pthread_mutex_unlock(&mutexRnn);
+      pthread_mutex_lock (&mutexRnn);
+        gradients_decend(mes_param->gru, mes_param->AVGgradient, lr, nb_traite);
+      pthread_mutex_unlock (&mutexRnn);
+      nb_traite = 0;
     }
-    rnn_zero_the_model(mes_param->gradient);
+
+    gru_zero_the_model(mes_param->gradient);
+    set_vector_zero(gru->h_prev, gru->N);
 
   }
-  rnn_free_model(mes_param->gradient);
-  rnn_free_model(mes_param->AVGgradient);
-  rnn_free_model(mes_param->rnn);
+  gru_free_model(mes_param->gradient);
+  gru_free_model(mes_param->AVGgradient);
 
   pthread_exit (NULL);
 }
@@ -117,6 +115,7 @@ int main(int argc, char **argv)
     get_data(data);
     double totaltime;
     void *status;
+    // char filaname[] = "gru.json";
     int n , r, end, start = 0 , size = 4460;
     int X = data->ecol , N = 64, Y = 2;
     float Loss , Acc ;
@@ -136,11 +135,14 @@ int main(int argc, char **argv)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    rnn = e_calloc(1, sizeof(SimpleRnn));
-    rnn_init_model(X, N, Y , rnn, 0); 
-    print_summary(rnn, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
+    gru = e_calloc(1, sizeof(gru_rnn));
+    gru_init_model(X, N, Y , gru, 0); 
+    gru_rnn* AVGgradient = e_calloc(1, sizeof(gru_rnn));
+    gru_init_model(X, N, Y , AVGgradient, 1); 
 
-                      printf("\n====== Training =======\n");
+    print_summary(gru, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
+
+                printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
@@ -152,12 +154,11 @@ int main(int argc, char **argv)
         printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
         for ( int i=0; i < NUM_THREADS ; i ++) 
         {
-            threads_params[i].rnn = e_calloc(1, sizeof(SimpleRnn));
-            rnn_init_model(X, N, Y , threads_params[i].rnn , 0);
-            copy_rnn(rnn, threads_params[i].rnn);
-            threads_params[i].gradient = e_calloc(1, sizeof(SimpleRnn));
-            rnn_init_model(X, N, Y , threads_params[i].gradient , 1);
-
+            threads_params[i].gru = e_calloc(1, sizeof(gru_rnn));
+            gru_init_model(X, N, Y , threads_params[i].gru , 0);
+            copy_gru(gru, threads_params[i].gru);
+            threads_params[i].gradient = e_calloc(1, sizeof(gru_rnn));
+            gru_init_model(X, N, Y , threads_params[i].gradient , 1);
             threads_params[i].loss = 0.0;
             threads_params[i].acc = 0.0;
             threads_params[i].start = start;
@@ -183,12 +184,16 @@ int main(int argc, char **argv)
             printf("ERROR; return code from pthread_join() is %d\n", r);
             exit(-1);
           }
+          somme_gradient(AVGgradient, threads_params[t].gru);
           Loss = Loss + threads_params[t].loss ;
-          Acc = Acc + threads_params[t].acc ;
-         
+          Acc  = Acc + threads_params[t].acc ;
+
         }
 
-        printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
+        modelUpdate(gru, AVGgradient, NUM_THREADS);
+        printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);  
+
+        // lstm_store_net_layers_as_json(gru, filaname); 
           
     }
 
@@ -197,7 +202,7 @@ int main(int argc, char **argv)
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
     
     pthread_mutex_destroy(&mutexRnn);
-    rnn_free_model(rnn);
+    gru_free_model(gru);
     free(threads);
     free(threads_params);
     pthread_exit(NULL);

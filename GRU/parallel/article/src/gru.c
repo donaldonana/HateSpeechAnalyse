@@ -290,7 +290,7 @@ void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr, int n) {
   gru_zero_the_model(gradients);
 }
 
-
+ 
 void gru_zero_the_model(gru_rnn * model)
 {
   vector_set_to_zero(model->Wy, model->Y * model->N);
@@ -387,3 +387,49 @@ void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr, int NUM_TH
 	printf(" Num. Threads : %d \n", NUM_THREADS);
 
 }
+
+
+void update_vect_model(double *a, double *b, int l , int n)
+{
+	float mean = 1/(float)n ;
+	for (int i = 0; i < l; i++)
+	{
+		a[i]= b[i]*mean ;
+
+	}
+
+}
+ 
+
+
+void modelUpdate(gru_rnn *gru, gru_rnn *grad, int NUM_THREADS)
+{
+
+  update_vect_model(gru->Wz, grad->Wz, gru->S*gru->N, NUM_THREADS);
+  update_vect_model(gru->Wr, grad->Wr, gru->S*gru->N, NUM_THREADS);
+  update_vect_model(gru->Wh, grad->Wh, gru->S*gru->N, NUM_THREADS);
+  update_vect_model(gru->Wy, grad->Wy, gru->Y*gru->N, NUM_THREADS);
+
+  update_vect_model(gru->bh, grad->bh, gru->N, NUM_THREADS);
+  update_vect_model(gru->br, grad->br, gru->N, NUM_THREADS);
+  update_vect_model(gru->bh, grad->bh, gru->N, NUM_THREADS);
+  update_vect_model(gru->by, grad->by, gru->Y, NUM_THREADS);
+
+	gru_zero_the_model(grad);
+}
+ 
+void somme_gradient(gru_rnn *grad, gru_rnn *slave)
+{
+
+vectors_add(grad->Wz, slave->Wz, slave->S*slave->N);
+vectors_add(grad->Wr, slave->Wr, slave->S*slave->N);
+vectors_add(grad->Wh, slave->Wh, slave->S*slave->N);
+vectors_add(grad->Wy, slave->Wy, slave->Y*slave->N);
+
+vectors_add(grad->br, slave->br, slave->N);
+vectors_add(grad->bh, slave->bh, slave->N);
+vectors_add(grad->bz, slave->bz, slave->N);
+vectors_add(grad->by, slave->by, slave->Y);
+
+}
+

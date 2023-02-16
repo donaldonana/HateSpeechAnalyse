@@ -66,7 +66,7 @@ int main(int argc, char **argv)
   gru_init_model(X, N, Y , gru, 0); 
   gru_init_model(X, N, Y , gradient , 1);
   gru_init_model(X, N, Y , AVGgradient , 1);
-  print_summary(gru, epoch, MINI_BATCH_SIZE, lr);
+  print_summary(gru, epoch, MINI_BATCH_SIZE, lr, 0);
 
     printf("\n====== Training =======\n");
 
