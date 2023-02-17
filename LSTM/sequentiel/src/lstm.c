@@ -162,7 +162,7 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
 
 
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
-void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_cache** cache, lstm_rnn* gradients)
+void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lstm_rnn* gradients)
 {
  
   lstm_cache* cache_in = NULL;
@@ -186,9 +186,7 @@ void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_cache** cache,
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, model->Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
+  vectors_substract(dldy, y, model->Y);
   
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
   copy_vector(dldc, dldh, N);
@@ -358,16 +356,16 @@ void mean_gradients(lstm_rnn* gradients, double d)
 
 void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, int mini_batch_size, float lr, Data* data){
 
-    float Loss = 0.0;
+    float Loss = 0.0, acc = 0.0;
     int nb_traite  = 0 ; 
     for (int i = 0; i < 4460; i++)
     {
       // forward
       lstm_forward(lstm, data->X[i], lstm->cache, data);
       // Compute loss
-      Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs);
+      Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs, data->ycol);
       // Compute accuracy
-      
+      acc = accuracy(acc, data->Y[i] , lstm->probs, data->ycol);
       // backforward
       lstm_backforward(lstm, data->Y[i], (data->xcol-1), lstm->cache, gradient);
       sum_gradients(AVGgradient, gradient);
@@ -385,8 +383,8 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       set_vector_zero(lstm->h_prev, lstm->N);
       set_vector_zero(lstm->c_prev, lstm->N);
     }
-    Loss = Loss/4460;
-    printf("%lf \n" , Loss);    
+    
+    printf("--> Loss : %f  Accuracy : %f \n" , Loss/4460, acc/4460);  
 
 }
 
