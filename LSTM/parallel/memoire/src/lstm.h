@@ -86,7 +86,7 @@ void lstm_forward(lstm_rnn* model, int *x ,lstm_cache** cache, Data *data);
 
 void lstm_cache_container_free(lstm_cache* cache_to_be_freed);
 
-void lstm_backforward(lstm_rnn* model , int y_correct, int l, lstm_cache** cache_in, lstm_rnn* gradients);
+void lstm_backforward(lstm_rnn* model , double *y, int l, lstm_cache** cache_in, lstm_rnn* gradients);
 
 void lstm_free_model(lstm_rnn* lstm);
 

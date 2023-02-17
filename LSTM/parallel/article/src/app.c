@@ -81,8 +81,8 @@ void *ThreadTrain (void *params) // Code du thread
     lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
     lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs);
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs, data->ycol);
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs, data->ycol);
     
     // mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->lstm->probs);
     nb_traite = nb_traite + 1; 

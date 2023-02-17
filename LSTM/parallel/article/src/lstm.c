@@ -162,7 +162,7 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
 
 
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
-void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_cache** cache, lstm_rnn* gradients)
+void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lstm_rnn* gradients)
 {
  
   lstm_cache* cache_in = NULL;
@@ -186,9 +186,7 @@ void lstm_backforward(lstm_rnn* model, int y_correct, int n, lstm_cache** cache,
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, model->Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
+  vectors_substract(dldy, y, model->Y);
   
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
   copy_vector(dldc, dldh, N);

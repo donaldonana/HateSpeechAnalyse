@@ -127,19 +127,19 @@ void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();
 
 
-/* uniform distribution, (0..1] */
-float drand();
+    /* uniform distribution, (0..1] */
+    float drand();
 
-/* normal distribution, centered on 0, std dev 1 */
-float random_normal() ;
+    /* normal distribution, centered on 0, std dev 1 */
+    float random_normal() ;
 
-float loss_entropy(double *y , double *y_pred, int n);
+    float loss_entropy(double *y , double *y_pred, int n);
 
-float binary_loss_entropy(double *y , double *y_pred, int n);
+    float binary_loss_entropy(double *y , double *y_pred, int n);
 
-int ArgMax(double *y, int n);
+    int ArgMax(double *y, int n);
 
-float accuracy(float acc, double *y, double *y_pred, int n);
+    float accuracy(float acc, double *y, double *y_pred, int n);
 
 
 
