@@ -749,17 +749,6 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
 
 }
 
-
-float binary_loss_entropy(int y_correct , double *y_pred) {
-
-    float loss;
-
-    loss = -1*log(y_pred[y_correct]);
-
-    return loss ;
-}
-
-
 /* uniform distribution, (0..1] */
 float drand()   
 {
@@ -772,6 +761,51 @@ float random_normal()
   return sqrt(-2*log(drand())) * cos(2*M_PI*drand());
 }
 
+float accuracy(float acc, double *y, double *y_pred, int n)
+{
+	int idx1 = ArgMax(y_pred, n);
+	int idx2 = ArgMax(y, n);
+
+	if (idx1 == idx2)
+	{
+		acc = acc + 1 ;
+	}
+	return acc;
+}
+
+int ArgMax(double *y, int n)
+{
+	int indMax = 0;
+  double max = y[0];
+
+  for (int i = 1; i < n; i++)
+  {
+    if (y[i] > max)
+	  {
+		  indMax = i;
+	  }
+  }
+	return indMax ;
+}
+
+float binary_loss_entropy(double *y , double *y_pred, int n) 
+{
+  float loss;
+  int idx;
+  idx = ArgMax(y, n);
+  loss = -1*log(y_pred[idx]);
+  return loss ;
+}
+
+float loss_entropy(double *y , double *y_pred, int n) 
+{
+  float loss = 0.0;
+  for (int i = 0; i < n; i++)
+  {
+    loss =  loss + ( -1*y[i]*log(y_pred[i]) );
+  }
+  return loss ;
+}
 
 
 void get_data(Data *data){
@@ -780,25 +814,29 @@ void get_data(Data *data){
 
   double a;
 	int b ;
-    FILE *fin = NULL;
-    FILE *file = NULL;
+  FILE *fin = NULL;
+  FILE *file = NULL;
 	FILE *stream = NULL;
-    fin = fopen("../../data/data.txt" , "r");
-    if(fscanf(fin, "%d" , &data->xraw)){}
-    if(fscanf(fin, "%d" , &data->xcol))
-    {printf(" data shape : (%d , %d) \n" , data->xraw , data->xcol);}
-    file = fopen("../../data/embedding.txt" , "r");
-	  if(fscanf(file, "%d" , &data->eraw)){}
-    if( fscanf(file, "%d" ,&data->ecol))
-    {printf(" Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
-    
+  fin = fopen("../../data/data.txt" , "r");
+  if(fscanf(fin, "%d" , &data->xraw)){}
+  if(fscanf(fin, "%d" , &data->xcol))
+  {printf(" data shape : (%d , %d) \n" , data->xraw , data->xcol);}
+  file = fopen("../../data/embedding.txt" , "r");
+	if(fscanf(file, "%d" , &data->eraw)){}
+  if( fscanf(file, "%d" ,&data->ecol))
+  {printf(" Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
+
+  stream = fopen("../../data/label.txt" , "r");
+	if(fscanf(stream,  "%d" , &data->yraw)){}
+  if( fscanf(stream, "%d" , &data->ycol)){}
 
 	data->embedding = allocate_dynamic_float_matrix(data->eraw, data->ecol);
 	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
-	data->Y = malloc(sizeof(int)*(data->xraw));
+	data->Y = allocate_dynamic_float_matrix(data->yraw, data->ycol);
+
 	// embeddind matrix
 	if (file != NULL)
-    {
+  {
 		for (int i = 0; i < data->eraw; i++)
 		{
 			for (int j = 0; j < data->ecol; j++)
@@ -809,10 +847,11 @@ void get_data(Data *data){
 			}
 			
 		}
-    }
+  }
+
 	// X matrix
 	if (fin != NULL)
-    {
+  {
 		 
 		for ( int i = 0; i < data->xraw; i++)
 		{
@@ -825,20 +864,25 @@ void get_data(Data *data){
 
 		}
 
-    }
-	// Y vector
-    stream = fopen("../../data/label.txt" , "r");
-    if(fscanf(stream, "%d" , &data->xraw)){ }
-	if (stream != NULL)
-    {
-        int count = 0;
-  		if (stream == NULL) {
-    	fprintf(stderr, "Error reading file\n");
-  		}
-  		while (fscanf(stream, "%d", &data->Y[count]) == 1) {
-      	count = count+1;
-  		}
-    }
+  }
+	// Y matrix
+	if (fin != NULL)
+  {
+		 
+		for ( int i = 0; i < data->yraw; i++)
+		{
+			for ( int j = 0; j < data->ycol; j++)
+			{
+				if(fscanf(stream, "%d" , &b))
+        {
+				data->Y[i][j] = b;
+				}
+			}
+
+		}
+
+  }
+
 
 	data->start_val = data->xraw * 0.7 ;
 	data->end_val = data->start_val + (data->xraw * 0.1 - 1);

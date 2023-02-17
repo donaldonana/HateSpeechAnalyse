@@ -67,7 +67,6 @@ void parse_input_args(int argc, char** argv)
 }
 
 
-
 void *ThreadTrain (void *params) // Code du thread
 { 
   struct thread_param *mes_param ;
@@ -82,9 +81,9 @@ void *ThreadTrain (void *params) // Code du thread
     // forward
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
     // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->probs);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->probs, data->ycol);
     // compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs);
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs, data->ycol);
     // backforward
     rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
@@ -104,10 +103,10 @@ void *ThreadTrain (void *params) // Code du thread
   }
   rnn_free_model(mes_param->gradient);
   rnn_free_model(mes_param->AVGgradient);
-  rnn_free_model(mes_param->rnn);
 
   pthread_exit (NULL);
 }
+
 
 int main(int argc, char **argv)
 {
@@ -127,6 +126,7 @@ int main(int argc, char **argv)
     NUM_THREADS = 2;
     MINI_BATCH_SIZE = 1;
 
+    /* Initialize and set thread  params */
     parse_input_args(argc, argv);
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
@@ -140,55 +140,54 @@ int main(int argc, char **argv)
     rnn_init_model(X, N, Y , rnn, 0); 
     print_summary(rnn, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-                      printf("\n====== Training =======\n");
+          printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
     for (int e = 0; e < epoch; e++)
     {
-        start = 0 ; 
-        end = n ;
-        Loss = Acc = 0.0 ;
-        printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-        for ( int i=0; i < NUM_THREADS ; i ++) 
+      start = 0 ; 
+      end = n ;
+      Loss = Acc = 0.0 ;
+      printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
+      for ( int i=0; i < NUM_THREADS ; i ++) 
+      {
+        threads_params[i].rnn = e_calloc(1, sizeof(SimpleRnn));
+        rnn_init_model(X, N, Y , threads_params[i].rnn , 0);
+        copy_rnn(rnn, threads_params[i].rnn);
+        threads_params[i].gradient = e_calloc(1, sizeof(SimpleRnn));
+        rnn_init_model(X, N, Y , threads_params[i].gradient , 1);
+        threads_params[i].loss = 0.0;
+        threads_params[i].acc = 0.0;
+        threads_params[i].start = start;
+        threads_params[i].end = end;
+
+        r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
+        if (r){
+          printf("ERROR; pthread_create() return code : %d\n", r);
+          exit(-1);
+        }
+        start = end + 1;
+        end = end + n;
+        if (i == (NUM_THREADS-1) )
         {
-            threads_params[i].rnn = e_calloc(1, sizeof(SimpleRnn));
-            rnn_init_model(X, N, Y , threads_params[i].rnn , 0);
-            copy_rnn(rnn, threads_params[i].rnn);
-            threads_params[i].gradient = e_calloc(1, sizeof(SimpleRnn));
-            rnn_init_model(X, N, Y , threads_params[i].gradient , 1);
-
-            threads_params[i].loss = 0.0;
-            threads_params[i].acc = 0.0;
-            threads_params[i].start = start;
-            threads_params[i].end = end;
-            r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
-            if (r) {
-                printf("ERROR; pthread_create() return code : %d\n", r);
-                exit(-1);
-            }
-            start = end + 1;
-            end = end + n;
-            if (i == (NUM_THREADS-1) )
-            {
-              end = end + size%NUM_THREADS ;
-            }
+           end = end + size%NUM_THREADS ;
         }
 
-        /* Free attribute and wait for the other threads */
-        pthread_attr_destroy(&attr);
-        for(int t=0; t<NUM_THREADS; t++) {
-          r = pthread_join(threads[t], &status);
-          if (r) {
-            printf("ERROR; return code from pthread_join() is %d\n", r);
-            exit(-1);
-          }
-          Loss = Loss + threads_params[t].loss ;
-          Acc = Acc + threads_params[t].acc ;
-         
+      }
+      /* Free attribute and wait for the other threads */
+      pthread_attr_destroy(&attr);
+      for(int t=0; t<NUM_THREADS; t++){
+        r = pthread_join(threads[t], &status);
+        if (r) {
+          printf("ERROR; return code from pthread_join() is %d\n", r);
+          exit(-1);
         }
+        Loss = Loss + threads_params[t].loss ;
+        Acc = Acc + threads_params[t].acc ;
+      }
 
-        printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
+      printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
           
     }
 

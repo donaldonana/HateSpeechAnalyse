@@ -87,8 +87,7 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
 
 }
 
-
-void rnn_backforward(SimpleRnn* model, int y_correct, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
+void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
 {
  
   simple_rnn_cache* cache = NULL;
@@ -112,9 +111,7 @@ void rnn_backforward(SimpleRnn* model, int y_correct, int n, simple_rnn_cache** 
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
+  vectors_substract(dldy, y, model->Y);
 
   fully_connected_backward(dldy, model->Wy, caches[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
   for (int t = n ; t >= 0; t--)
@@ -181,7 +178,7 @@ void rnn_validation(SimpleRnn* rnn, Data* data)
   for (int i = 1000; i < 2000; i++)
   {
     rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs);
+    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs, rnn->Y);
   }
   Loss = Loss/1000;
 

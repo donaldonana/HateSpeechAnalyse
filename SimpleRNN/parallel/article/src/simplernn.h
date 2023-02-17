@@ -62,7 +62,7 @@ void rnn_forward(SimpleRnn* model, int *x ,simple_rnn_cache** cache, Data *data)
 
 void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed);
 
-void rnn_backforward(SimpleRnn* model , int y_correct, int l, simple_rnn_cache** cache_in, SimpleRnn* gradients);
+void rnn_backforward(SimpleRnn* model , double *y, int l, simple_rnn_cache** cache_in, SimpleRnn* gradients);
 
 void rnn_free_model(SimpleRnn* rnn);
 

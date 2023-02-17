@@ -43,25 +43,15 @@ struct Data
 	int xcol;
 	int ecol;
     int eraw;
+    int yraw;
+    int ycol;
 	int start_val;
 	int end_val;
 	int **X;
-    int *Y;
+    double **Y;
     double **embedding;
 
 };
-
-void get_data(Data *data);
-
-float binary_loss_entropy(int y_correct , double *y_pred) ;
-
-double **allocate_dynamic_float_matrix(int row, int col);
-
-int **allocate_dynamic_int_matrix(int row, int col);
-
-void deallocate_dynamic_float_matrix(float **matrix, int row);
-
-void deallocate_dynamic_int_matrix(int **matrix, int row);
 
 // used on contigous vectors
 //		A = A + B		A,		B,    l
@@ -126,14 +116,33 @@ void 	vector_store_ascii(double *, int, FILE *);
 void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();
 
-
-
 /* uniform distribution, (0..1] */
 float drand()   ;
 
-
 /* normal distribution, centered on 0, std dev 1 */
 float random_normal() ;
+
+float loss_entropy(double *y , double *y_pred, int n);
+
+float binary_loss_entropy(double *y , double *y_pred, int n);
+
+int ArgMax(double *y, int n);
+
+float accuracy(float acc, double *y, double *y_pred, int n);
+
+double **allocate_dynamic_float_matrix(int row, int col);
+
+int  **allocate_dynamic_int_matrix(int row, int col);
+
+void deallocate_dynamic_float_matrix(float **matrix, int row);
+
+void deallocate_dynamic_int_matrix(int **matrix, int row);
+
+
+void get_data(Data *data);
+
+
+
 
 
 #endif

@@ -88,7 +88,7 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
 }
 
 
-void rnn_backforward(SimpleRnn* model, int y_correct, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
+void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
 {
  
   simple_rnn_cache* cache = NULL;
@@ -112,10 +112,8 @@ void rnn_backforward(SimpleRnn* model, int y_correct, int n, simple_rnn_cache** 
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
-
+  vectors_substract(dldy, y, model->Y);
+ 
   fully_connected_backward(dldy, model->Wy, caches[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
   for (int t = n ; t >= 0; t--)
   {
@@ -173,20 +171,22 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
 
 void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data)
 {
-  printf("--->Training \n ");
-  float Loss = 0.0;
+  float Loss = 0.0, acc = 0.0;
   int nb_traite  = 0 ; 
-  for (int i = 0; i < 1000; i++)
+  for (int i = 0; i < 4460; i++)
   {
-    // forward
+    // Forward
     rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs);
-    // backforward
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+    // Backforward
     rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
     sum_gradients(AVGgradient, gradient);
-      
+
     nb_traite = nb_traite + 1 ;
-    if (nb_traite == mini_batch_size || i == 999)
+    if (nb_traite == mini_batch_size || i == 4459)
     {
       gradients_decend(rnn, AVGgradient, lr, nb_traite);
       rnn_zero_the_model(AVGgradient);
@@ -194,8 +194,7 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     }
     rnn_zero_the_model(gradient);
   }
-  Loss = Loss/1000;
-  printf("**Loss : %lf \n" , Loss);    
+  printf("--> Loss : %f  Accuracy : %f \n" , Loss/4460, acc/4460);  
 
 }
 
@@ -208,7 +207,7 @@ void rnn_validation(SimpleRnn* rnn, Data* data)
   for (int i = 1000; i < 2000; i++)
   {
     rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs);
+    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->yraw);
   }
   Loss = Loss/1000;
 
