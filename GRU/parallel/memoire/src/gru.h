@@ -75,7 +75,7 @@ void gru_forward(gru_rnn* model, int *x ,gru_cache** cache, Data *data);
 
 void gru_cache_container_free(gru_cache* cache_to_be_freed);
 
-void gru_backforward(gru_rnn* model , int y_correct, int l, gru_cache** cache_in, gru_rnn* gradients);
+void gru_backforward(gru_rnn* model , double *y, int l, gru_cache** cache_in, gru_rnn* gradients);
 
 void gru_free_model(gru_rnn* gru);
 

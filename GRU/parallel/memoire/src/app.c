@@ -78,13 +78,13 @@ void *ThreadTrain (void *params) // Code du thread
    
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
-    // forward
+    // Forward
     gru_forward(mes_param->gru, data->X[i], mes_param->gru->cache, data);
-    // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs);
-    // compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs);
-    // backforward
+    // Compute loss
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs, data->ycol);
+    // Compute accuracy training
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs, data->ycol);
+    // Backforward
     gru_backforward(mes_param->gru, data->Y[i], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     gru_init_model(X, N, Y , gru, 0); 
     print_summary(gru, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-                printf("\n====== Training =======\n");
+        printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            start = end + 1;
+            start = end ;
             end = end + n;
             if (i == (NUM_THREADS-1) )
             {

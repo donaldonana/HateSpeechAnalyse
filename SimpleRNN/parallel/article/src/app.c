@@ -82,7 +82,7 @@ void *ThreadTrain (void *params) // Code du thread
     // forward
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
     // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->rnn->probs, data->ycol);
+    mes_param->loss = mes_param->loss + loss_entropy(data->Y[i], mes_param->rnn->probs, data->ycol);
     // compute accuracy training
     mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs, data->ycol);
     // backforward
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
           printf("ERROR; pthread_create() return code : %d\n", r);
           exit(-1);
         }
-        start = end + 1;
+        start = end ;
         end = end + n;
         if (i == (NUM_THREADS-1) )
         {

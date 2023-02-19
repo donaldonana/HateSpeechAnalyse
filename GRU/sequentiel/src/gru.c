@@ -155,7 +155,7 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
 }
 
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
-void gru_backforward(gru_rnn* model, int y_correct, int n, gru_cache** cache, gru_rnn* gradients)
+void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rnn* gradients)
 {
  
   gru_cache* cache_in = NULL;
@@ -185,9 +185,7 @@ void gru_backforward(gru_rnn* model, int y_correct, int n, gru_cache** cache, gr
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, model->Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
+  vectors_substract(dldy, y, model->Y);
   
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
 
@@ -349,13 +347,13 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
     int nb_traite  = 0 , size = 4460 ;
     for (int i = 0; i < 4460; i++)
     {
-      // forward
+      // Forward
       gru_forward(gru, data->X[i], gru->cache, data);
       // Compute loss
-      Loss = Loss + binary_loss_entropy(data->Y[i], gru->probs);
+      Loss = Loss + loss_entropy(data->Y[i], gru->probs, data->ycol);
       // Compute accuracy
-      acc = accuracy(acc, data->Y[i], gru->probs);
-      // backforward
+      acc = accuracy(acc, data->Y[i], gru->probs, data->ycol);
+      // Backforward
       gru_backforward(gru, data->Y[i], (data->xcol-1), gru->cache, gradient);
       sum_gradients(AVGgradient, gradient);
       
@@ -370,7 +368,6 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       set_vector_zero(gru->h_prev, gru->N);
     }
     printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, acc/size);   
-   
 
 }
 

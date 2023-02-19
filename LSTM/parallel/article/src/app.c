@@ -78,15 +78,17 @@ void *ThreadTrain (void *params) // Code du thread
    
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
+    // Forward
     lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
+    // Compute loss
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs, data->ycol);
+    // Compute accuracy training
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs, data->ycol);
+    // Backforward
     lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs, data->ycol);
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs, data->ycol);
     
-    // mes_param->acc = accuracy(mes_param->acc , data->Y[i], mes_param->lstm->probs);
     nb_traite = nb_traite + 1; 
-
     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
       pthread_mutex_lock (&mutexRnn);
@@ -100,6 +102,7 @@ void *ThreadTrain (void *params) // Code du thread
     set_vector_zero(lstm->c_prev, lstm->N);
 
   }
+
 
   lstm_free_model(mes_param->gradient);
   lstm_free_model(mes_param->AVGgradient);
@@ -141,7 +144,7 @@ int main(int argc, char **argv)
 
     print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-              printf("\n====== Training =======\n");
+          printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
@@ -178,7 +181,8 @@ int main(int argc, char **argv)
 
         /* Free attribute and wait for the other threads */
         pthread_attr_destroy(&attr);
-        for(int t=0; t<NUM_THREADS; t++) {
+        for(int t=0; t<NUM_THREADS; t++)
+        {
           r = pthread_join(threads[t], &status);
           if (r) {
             printf("ERROR; return code from pthread_join() is %d\n", r);
@@ -187,7 +191,6 @@ int main(int argc, char **argv)
           somme_gradient(AVGgradient, threads_params[t].lstm);
           Loss = Loss + threads_params[t].loss ;
           Acc  = Acc + threads_params[t].acc ;
-
         }
         modelUpdate(lstm, AVGgradient, NUM_THREADS);
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
@@ -203,5 +206,6 @@ int main(int argc, char **argv)
     free(threads);
     free(threads_params);
     pthread_exit(NULL);
+
 }
 

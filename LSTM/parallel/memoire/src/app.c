@@ -78,13 +78,13 @@ void *ThreadTrain (void *params) // Code du thread
    
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
-    // forward
+    // Forward
     lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
-    // compute loss
+    // Compute loss
     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs, data->ycol);
-    // compute accuracy training
+    // Compute accuracy training
     mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs, data->ycol);
-    // backforward
+    // Backforward
     lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     lstm_init_model(X, N, Y , lstm, 0); 
     print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-                printf("\n====== Training =======\n");
+          printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     n = size/NUM_THREADS;
@@ -162,22 +162,25 @@ int main(int argc, char **argv)
             threads_params[i].acc = 0.0;
             threads_params[i].start = start;
             threads_params[i].end = end;
+
             r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
             if (r) {
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            start = end + 1;
+            start = end 
             end = end + n;
             if (i == (NUM_THREADS-1) )
             {
               end = end + size%NUM_THREADS ;
             }
+
         }
 
         /* Free attribute and wait for the other threads */
         pthread_attr_destroy(&attr);
-        for(int t=0; t<NUM_THREADS; t++) {
+        for(int t=0; t<NUM_THREADS; t++) 
+        {
           r = pthread_join(threads[t], &status);
           if (r) {
             printf("ERROR; return code from pthread_join() is %d\n", r);
@@ -185,14 +188,12 @@ int main(int argc, char **argv)
           }
           Loss = Loss + threads_params[t].loss ;
           Acc  = Acc + threads_params[t].acc ;
-
         }
-
         printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);   
-
         // lstm_store_net_layers_as_json(lstm, filaname); 
           
     }
+
 
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
@@ -203,5 +204,6 @@ int main(int argc, char **argv)
     free(threads);
     free(threads_params);
     pthread_exit(NULL);
+
 }
 

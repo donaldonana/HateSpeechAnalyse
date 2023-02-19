@@ -155,7 +155,7 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
 }
 
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
-void gru_backforward(gru_rnn* model, int y_correct, int n, gru_cache** cache, gru_rnn* gradients)
+void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rnn* gradients)
 {
  
   gru_cache* cache_in = NULL;
@@ -185,9 +185,8 @@ void gru_backforward(gru_rnn* model, int y_correct, int n, gru_cache** cache, gr
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, model->Y);
 
-  if ( y_correct >= 0 ) {
-    dldy[y_correct] -= 1.0;
-  }
+  vectors_substract(dldy, y, model->Y);
+
   
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
 

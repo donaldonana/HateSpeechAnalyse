@@ -81,9 +81,9 @@ void *ThreadTrain (void *params) // Code du thread
     // forward
     gru_forward(mes_param->gru, data->X[i], mes_param->gru->cache, data);
     // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs, data->ycol);
     // compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs);
+    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs, data->ycol);
     // backforward
     gru_backforward(mes_param->gru, data->Y[i], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            start = end + 1;
+            start = end ;
             end = end + n;
             if (i == (NUM_THREADS-1) )
             {

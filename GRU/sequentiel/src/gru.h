@@ -75,13 +75,13 @@ void gru_forward(gru_rnn* model, int *x ,gru_cache** cache, Data *data);
 
 void gru_cache_container_free(gru_cache* cache_to_be_freed);
 
-void gru_backforward(gru_rnn* model , int y_correct, int l, gru_cache** cache_in, gru_rnn* gradients);
+void gru_backforward(gru_rnn* model , double *y, int l, gru_cache** cache_in, gru_rnn* gradients);
 
 void gru_free_model(gru_rnn* gru);
 
 void gru_zero_the_model(gru_rnn *model);
 
-void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr);
+void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr, int n);
 
 void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient,  int mini_batch_size, float lr, Data* data);
 
@@ -91,7 +91,7 @@ void sum_gradients(gru_rnn* gradients, gru_rnn* gradients_entry);
 
 void mean_gradients(gru_rnn* gradients, double d);
 
-void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr, int n);
+void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr);
 
 gru_cache*  gru_cache_container_init(int X, int N, int Y);
 

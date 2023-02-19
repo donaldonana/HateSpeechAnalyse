@@ -360,13 +360,13 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
     int nb_traite  = 0 ; 
     for (int i = 0; i < 4460; i++)
     {
-      // forward
+      // Forward
       lstm_forward(lstm, data->X[i], lstm->cache, data);
       // Compute loss
-      Loss = Loss + binary_loss_entropy(data->Y[i], lstm->probs, data->ycol);
+      Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
       // Compute accuracy
       acc = accuracy(acc, data->Y[i] , lstm->probs, data->ycol);
-      // backforward
+      // Backforward
       lstm_backforward(lstm, data->Y[i], (data->xcol-1), lstm->cache, gradient);
       sum_gradients(AVGgradient, gradient);
       
