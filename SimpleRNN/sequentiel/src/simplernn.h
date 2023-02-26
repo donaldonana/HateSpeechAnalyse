@@ -80,7 +80,9 @@ void mean_gradients(SimpleRnn* gradients, double d);
 
 void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr);
 
-void rnn_validation(SimpleRnn* rnn, Data* data);
+void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename);
+
+float rnn_validation(SimpleRnn* rnn, Data* data);
 
 void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache);
 

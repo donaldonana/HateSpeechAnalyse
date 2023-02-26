@@ -12,10 +12,8 @@
 
 struct timeval start_t , end_t ;
 
-
 float lr;
 int MINI_BATCH_SIZE, epoch  ;
-
 
 void parse_input_args(int argc, char** argv)
 {
@@ -49,19 +47,17 @@ void parse_input_args(int argc, char** argv)
 }
 
 
-
 int main(int argc, char **argv)
 {
 
   Data *data  = malloc(sizeof(Data));
   get_data(data);
-
+  char filename[] = "SimpleRnn.json";
   double totaltime;
-
   lr = 0.01;
-  MINI_BATCH_SIZE = 1;
+  MINI_BATCH_SIZE = 16;
   int X = data->ecol, N = 64, Y = data->ycol;
-  epoch = 15 ;
+  epoch = 10 ;
   
   parse_input_args(argc, argv);
   SimpleRnn* rnn = e_calloc(1, sizeof(SimpleRnn));
@@ -72,16 +68,32 @@ int main(int argc, char **argv)
   rnn_init_model(X, N, Y , AVGgradient , 1);
   print_summary(rnn, epoch, MINI_BATCH_SIZE, lr);
 
-
-      printf("\n====== Training =======\n");
-      
+    printf("\n====== Training =======\n");
+  
+  float val_loss, best_loss = 100 ;
+  int stop = 0, e = 0 ; 
   gettimeofday(&start_t, NULL);
-  for (int e = 0; e < epoch ; e++)
+  while (e < epoch && stop < 4)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
     rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
-    // rnn_validation(rnn, data);
+    val_loss = rnn_validation(rnn, data);
+
+    if (val_loss < 0.9*best_loss)
+    {
+      printf("\nsave");
+      rnn_store_net_layers_as_json(rnn, filename); 
+      stop = 0;
+      best_loss = val_loss;
+    }
+    else
+    {
+      stop = stop + 1;
+    }
+
+    e = e + 1 ;
   }
+
   
   gettimeofday(&end_t, NULL);
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
@@ -90,6 +102,5 @@ int main(int argc, char **argv)
   rnn_free_model(rnn);
   rnn_free_model(gradient);
   rnn_free_model(AVGgradient);
-  printf("\n initialization finish. \n");
 
 }

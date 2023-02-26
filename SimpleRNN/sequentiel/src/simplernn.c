@@ -172,8 +172,8 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
 void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data)
 {
   float Loss = 0.0, acc = 0.0;
-  int nb_traite  = 0 ; 
-  for (int i = 0; i < 4460; i++)
+  int end = data->start_val, nb_traite = 0 ; 
+  for (int i = 0; i <= end; i++)
   {
     // Forward
     rnn_forward(rnn, data->X[i], rnn->cache, data);
@@ -186,7 +186,7 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     sum_gradients(AVGgradient, gradient);
 
     nb_traite = nb_traite + 1 ;
-    if (nb_traite == mini_batch_size || i == 4459)
+    if (nb_traite == mini_batch_size || i == end)
     {
       gradients_decend(rnn, AVGgradient, lr, nb_traite);
       rnn_zero_the_model(AVGgradient);
@@ -194,39 +194,78 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     }
     rnn_zero_the_model(gradient);
   }
-  printf("--> Loss : %f  Accuracy : %f \n" , Loss/4460, acc/4460);  
+  printf("--> Loss : %f || Accuracy : %f \n" , Loss/end, acc/end);  
 
 }
 
 
-void rnn_validation(SimpleRnn* rnn, Data* data)
+float rnn_validation(SimpleRnn* rnn, Data* data)
 {
-  printf("--->Validation \n");    
 
-  float Loss = 0.0;
-  for (int i = 1000; i < 2000; i++)
+  float Loss = 0.0, acc = 0.0;
+
+  int start = data->start_val , end = data->end_val , n = 0 ;
+  for (int i = start; i <= end; i++)
   {
+    // Forward
     rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->yraw);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+    n = n + 1 ;
   }
-  Loss = Loss/1000;
+  printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
 
-  printf("Loss : %lf \n" , Loss);    
+  return Loss;
 
 }
 
 
-void print_summary(SimpleRnn* lstm, int epoch, int mini_batch, float lr)
+void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr)
 {
 	printf("\n ============= Model Summary ========== \n");
 	printf(" Model : SIMPLE RNNs \n");
 	printf(" Epoch Max  : %d \n", epoch);
 	printf(" Mini batch : %d \n", mini_batch);
 	printf(" Learning Rate : %f \n", lr);
-	printf(" Input Size  : %d \n", lstm->X);
-	printf(" Hiden Size  : %d \n", lstm->N);
-	printf(" output Size  : %d \n",lstm->Y);
+	printf(" Input Size  : %d \n", rnn->X);
+	printf(" Hiden Size  : %d \n", rnn->N);
+	printf(" output Size  : %d \n",rnn->Y);
 }
+
+void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename)
+{
+  FILE * fp; 
+
+  fp = fopen(filename, "w");
+  
+  if ( fp == NULL ) {
+    printf("Failed to open file: %s for writing.\n", filename);
+    return;
+  }
+  
+    fprintf(fp, "{");
+    fprintf(fp, "\n\t\"InputSize \": %d",   rnn->X);
+    fprintf(fp, ",\n\t\"HiddenSize \": %d", rnn->N);
+    fprintf(fp, ",\n\t\"OutputSize \": %d", rnn->Y);
+
+    fprintf(fp, ",\n\t\"Wy\": ");
+    vector_store_as_matrix_json(rnn->Wy, rnn->Y, rnn->N, fp);
+    fprintf(fp, ",\n\t\"Wh\": ");
+    vector_store_as_matrix_json(rnn->Wh, rnn->N, rnn->S, fp);
+    
+    fprintf(fp, ",\n\t\"by\": ");
+    vector_store_json(rnn->by, rnn->Y, fp);
+    fprintf(fp, ",\n\t\"bh\": ");
+    vector_store_json(rnn->bh, rnn->N, fp);
+     
+    fprintf(fp, "\n}");
+
+  fclose(fp);
+
+}
+
 
 void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l)
 {
