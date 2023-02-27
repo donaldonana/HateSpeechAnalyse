@@ -57,6 +57,8 @@ void parse_input_args(int argc, char** argv)
 
 int main(int argc, char **argv)
 {
+  FILE *fl  = fopen(LOSS_FILE_NAME, "w");
+  FILE *fa  = fopen(ACC_FILE_NAME,  "w");
   FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
 
   Data *data  = malloc(sizeof(Data));
@@ -82,8 +84,7 @@ int main(int argc, char **argv)
   while (e < epoch && stop < 4)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-    rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
-
+    rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data, e+1, fl , fa);
     /* Validation Phase And Early Stoping */
     val_loss = rnn_validation(rnn, data);
     fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
@@ -100,7 +101,6 @@ int main(int argc, char **argv)
     }
     e = e + 1 ; 
   }
-
   
   gettimeofday(&end_t, NULL);
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
@@ -109,5 +109,8 @@ int main(int argc, char **argv)
   rnn_free_model(rnn);
   rnn_free_model(gradient);
   rnn_free_model(AVGgradient);
+  fclose(fl);
+  fclose(fv);
+  fclose(fa);
 
 }

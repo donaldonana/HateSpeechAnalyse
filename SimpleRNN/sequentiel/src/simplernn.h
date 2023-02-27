@@ -70,7 +70,7 @@ void rnn_zero_the_model(SimpleRnn *model);
 
 void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n);
 
-void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient,  int mini_batch_size, float lr, Data* data);
+void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa);
 
 void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l);
 

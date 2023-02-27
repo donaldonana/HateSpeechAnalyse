@@ -169,7 +169,7 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
 }
 
 
-void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data)
+void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa)
 {
   float Loss = 0.0, acc = 0.0;
   int end = data->start_val - 1, nb_traite = 0 ; 
@@ -195,6 +195,8 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     rnn_zero_the_model(gradient);
   }
   printf("--> Loss : %f || Accuracy : %f \n" , Loss/end, acc/end);  
+  fprintf(fl,"%d,%.6f\n", e , Loss/end);
+  fprintf(fa,"%d,%.6f\n", e , acc/end);
 
 }
 
