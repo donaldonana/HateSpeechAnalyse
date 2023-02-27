@@ -808,8 +808,8 @@ float loss_entropy(double *y , double *y_pred, int n)
 }
 
 
-void get_data(Data *data){
-
+void get_split_data(Data *data, float VALIDATION_SIZE)
+{
   printf("\n ============= Data Summary ========== \n");
 
   double a;
@@ -817,10 +817,12 @@ void get_data(Data *data){
   FILE *fin = NULL;
   FILE *file = NULL;
 	FILE *stream = NULL;
+
   fin = fopen("../../../data/data.txt" , "r");
   if(fscanf(fin, "%d" , &data->xraw)){}
   if(fscanf(fin, "%d" , &data->xcol))
   {printf(" *Data shape : (%d , %d) \n" , data->xraw , data->xcol);}
+
   file = fopen("../../../data/embedding.txt" , "r");
 	if(fscanf(file, "%d" , &data->eraw)){}
   if( fscanf(file, "%d" ,&data->ecol))
@@ -848,11 +850,9 @@ void get_data(Data *data){
 			
 		}
   }
-
 	// X matrix
 	if (fin != NULL)
   {
-		 
 		for ( int i = 0; i < data->xraw; i++)
 		{
 			for ( int j = 0; j < data->xcol; j++)
@@ -861,15 +861,11 @@ void get_data(Data *data){
 				data->X[i][j] = b;
 				}
 			}
-
 		}
-
   }
-
 	// Y matrix
 	if (fin != NULL)
   {
-		 
 		for ( int i = 0; i < data->yraw; i++)
 		{
 			for ( int j = 0; j < data->ycol; j++)
@@ -879,22 +875,28 @@ void get_data(Data *data){
 				data->Y[i][j] = b;
 				}
 			}
-
 		}
-
   }
 
-
-  data->start_val = data->xraw * 0.8 ;
-	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
+  if (VALIDATION_SIZE == 0)
+  {
+	  data->start_test = data->xraw * 0.7 ;
+    data->start_val = data->start_test;
+    data->end_val   = data->xraw - 1;
+  }
+  else
+  {
+	  data->start_val = data->xraw * 0.7 ;
+	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
+    data->start_test = data->end_val + 1 ;
+  }
 	printf(" *Train data : 0 ---> %d  \n " , data->start_val - 1);
-	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val-1);
-	printf("*Test data : %d ---> %d \n " , (data->end_val), data->xraw-1);
+	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val);
+	printf("*Test data : %d ---> %d \n " , (data->start_test), data->xraw-1);
 
 	fclose(fin);
 	fclose(file);
 	fclose(stream);
-
 }
 
 

@@ -47,13 +47,14 @@ struct Data
     int ycol;
 	int start_val;
 	int end_val;
+    int start_test;
 	int **X;
     double **Y;
     double **embedding;
 
 };
 
-void get_data(Data *data);
+void get_split_data(Data *data, float VALIDATION_SIZE);
 
 double **allocate_dynamic_float_matrix(int row, int col);
 

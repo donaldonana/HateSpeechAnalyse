@@ -194,7 +194,7 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     }
     rnn_zero_the_model(gradient);
   }
-  printf("--> Loss : %f || Accuracy : %f \n" , Loss/end, acc/end);  
+  printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
   fprintf(fl,"%d,%.6f\n", e , Loss/end);
   fprintf(fa,"%d,%.6f\n", e , acc/end);
 
@@ -217,8 +217,7 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
     acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
     n = n + 1 ;
   }
-  printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
-
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
   return Loss/n;
 
 }

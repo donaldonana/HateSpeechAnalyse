@@ -231,9 +231,8 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
     acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
     n = n + 1 ;
   }
-  printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
-
-  return Loss;
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
 
 }
 

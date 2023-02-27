@@ -3,6 +3,7 @@
 #include <math.h>
 #include "utilities.h"
 #include "simplernn.h"
+#include "std_conf.h"
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,12 +12,11 @@
 // # define NUM_THREADS 2
 
 struct timeval start_t , end_t ;
+pthread_mutex_t mutexRnn;
 SimpleRnn *rnn;
 Data *data ;
-float lr;
-int MINI_BATCH_SIZE, NUM_THREADS, epoch  ;
-
-pthread_mutex_t mutexRnn;
+float lr , VALIDATION_SIZE ;
+int epoch, MINI_BATCH_SIZE, NUM_THREADS ;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
@@ -60,7 +60,14 @@ void parse_input_args(int argc, char** argv)
       if ( MINI_BATCH_SIZE == 0 ) {
         // usage(argv);
       }
-    }  
+    } else if ( !strcmp(argv[a], "-validation") ) {
+      VALIDATION_SIZE =  atof(argv[a + 1]);
+      if ( VALIDATION_SIZE < 0.1 || VALIDATION_SIZE > 0.3) {
+        // usage(argv);
+        VALIDATION_SIZE = 0.1;
+      }
+      
+    }
     a += 1;
 
   }
@@ -108,28 +115,27 @@ int main(int argc, char **argv)
 {
     // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    char filename[] = "SimpleRnn.json";
+    FILE *fl  = fopen(LOSS_FILE_NAME, "w");
+    FILE *fa  = fopen(ACC_FILE_NAME,  "w");
+    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
     data = malloc(sizeof(Data));
-    get_data(data);
     double totaltime;
     void *status;
-    int n , r, end, start = 0 , size = (data->start_val - 1) , stop = 0, e = 0 , X = data->ecol , N = 64, Y = 2;
+    int n , r, end, start = 0 , size , stop = 0, e = 0 , X , N , Y;
     float Loss , Acc , val_loss, best_loss = 100 ;
     
-    // Default parameters 
-    lr = 0.01 ;
-    epoch = 20;
-    NUM_THREADS = 2;
-    MINI_BATCH_SIZE = 16;
+    // Set Parameters And Retreive data
+    lr = 0.01; epoch = 20; NUM_THREADS = 2; MINI_BATCH_SIZE = 16; VALIDATION_SIZE = 0; N = 64; 
     parse_input_args(argc, argv);
-    n = size/NUM_THREADS;
-                        
+    get_split_data(data, VALIDATION_SIZE);
+    size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; n = size/NUM_THREADS; 
+
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
 
-    /* Initialize and Set thread detached attribute */
+    /* Initialize and set thread detached attribute */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
@@ -186,13 +192,16 @@ int main(int argc, char **argv)
         Loss = Loss + threads_params[t].loss ;
         Acc = Acc + threads_params[t].acc ;
       }
-      printf("--> Loss : %f || Accuracy : %f \n" , Loss/size, Acc/size); 
-      /* Validation Phase And early Stoping */
+      printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
+      fprintf(fl,"%d,%.6f\n", e+1 , Loss/size);
+      fprintf(fa,"%d,%.6f\n", e+1 , Acc/size);
+      /* Validation Phase And Early Stoping */
       val_loss = rnn_validation(rnn, data);
+      fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
       if (val_loss < 0.9*best_loss)
       {
         printf("\nsave");
-        rnn_store_net_layers_as_json(rnn, filename); 
+        rnn_store_net_layers_as_json(rnn, MODEL_FILE_NAME); 
         stop = 0;
         best_loss = val_loss;
       }
