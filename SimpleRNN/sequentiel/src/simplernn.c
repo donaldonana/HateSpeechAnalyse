@@ -172,7 +172,7 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
 void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data)
 {
   float Loss = 0.0, acc = 0.0;
-  int end = data->start_val, nb_traite = 0 ; 
+  int end = data->start_val - 1, nb_traite = 0 ; 
   for (int i = 0; i <= end; i++)
   {
     // Forward

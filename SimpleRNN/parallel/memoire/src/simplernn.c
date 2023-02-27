@@ -169,23 +169,6 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
   vectors_add(gradients->bh, gradients_entry->bh, gradients->N);
 }
 
- 
-void rnn_validation(SimpleRnn* rnn, Data* data)
-{
-  printf("--->Validation \n");    
-
-  float Loss = 0.0;
-  for (int i = 1000; i < 2000; i++)
-  {
-    rnn_forward(rnn, data->X[i], rnn->cache, data);
-    Loss = Loss + binary_loss_entropy(data->Y[i], rnn->probs, rnn->Y);
-  }
-  Loss = Loss/1000;
-
-  printf("Loss : %lf \n" , Loss);    
-
-}
-
 
 void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr, int NUM_THREADS)
 {
@@ -231,4 +214,60 @@ void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn)
   copy_vector(secondrnn->by, rnn->by, rnn->Y);
 
 }
+
+
+float rnn_validation(SimpleRnn* rnn, Data* data)
+{
+
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_val , end = data->end_val , n = 0 ;
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    rnn_forward(rnn, data->X[i], rnn->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
+
+  return Loss;
+
+}
+
+
+void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename)
+{
+  FILE * fp; 
+
+  fp = fopen(filename, "w");
+  
+  if ( fp == NULL ) {
+    printf("Failed to open file: %s for writing.\n", filename);
+    return;
+  }
+  
+    fprintf(fp, "{");
+    fprintf(fp, "\n\t\"InputSize \": %d",   rnn->X);
+    fprintf(fp, ",\n\t\"HiddenSize \": %d", rnn->N);
+    fprintf(fp, ",\n\t\"OutputSize \": %d", rnn->Y);
+
+    fprintf(fp, ",\n\t\"Wy\": ");
+    vector_store_as_matrix_json(rnn->Wy, rnn->Y, rnn->N, fp);
+    fprintf(fp, ",\n\t\"Wh\": ");
+    vector_store_as_matrix_json(rnn->Wh, rnn->N, rnn->S, fp);
+    
+    fprintf(fp, ",\n\t\"by\": ");
+    vector_store_json(rnn->by, rnn->Y, fp);
+    fprintf(fp, ",\n\t\"bh\": ");
+    vector_store_json(rnn->bh, rnn->N, fp);
+     
+    fprintf(fp, "\n}");
+
+  fclose(fp);
+
+}
+
 

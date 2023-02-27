@@ -820,11 +820,11 @@ void get_data(Data *data){
   fin = fopen("../../../data/data.txt" , "r");
   if(fscanf(fin, "%d" , &data->xraw)){}
   if(fscanf(fin, "%d" , &data->xcol))
-  {printf(" data shape : (%d , %d) \n" , data->xraw , data->xcol);}
+  {printf(" *Data shape : (%d , %d) \n" , data->xraw , data->xcol);}
   file = fopen("../../../data/embedding.txt" , "r");
 	if(fscanf(file, "%d" , &data->eraw)){}
   if( fscanf(file, "%d" ,&data->ecol))
-  {printf(" Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
+  {printf(" *Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
 
   stream = fopen("../../../data/label.txt" , "r");
 	if(fscanf(stream,  "%d" , &data->yraw)){}
@@ -885,11 +885,11 @@ void get_data(Data *data){
   }
 
 
-	data->start_val = data->xraw * 0.7 ;
+  data->start_val = data->xraw * 0.8 ;
 	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
-	// printf(" Train data from index 1 to index %d  \n " , data->start_val);
-	// printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
-	// printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+	printf(" *Train data : 0 ---> %d  \n " , data->start_val - 1);
+	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val-1);
+	printf("*Test data : %d ---> %d \n " , (data->end_val), data->xraw-1);
 
 	fclose(fin);
 	fclose(file);
