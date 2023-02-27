@@ -79,53 +79,50 @@ void *ThreadTrain (void *params) // Code du thread
   
   for (int i = mes_param->start ; i < mes_param->end; i++)
   {
-    // forward
+    // Forward
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
-    // compute loss
+    // Compute loss
     mes_param->loss = mes_param->loss + loss_entropy(data->Y[i], mes_param->rnn->probs, data->ycol);
-    // compute accuracy training
+    // Compute accuracy training
     mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs, data->ycol);
-    // backforward
+    // Backforward
     rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
-
+    // Update The Local RNN 
     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end - 1) )
     {	
-      // update the central LSTM with mutex
-      pthread_mutex_lock(&mutexRnn);
-        gradients_decend(mes_param->rnn, mes_param->AVGgradient, lr, nb_traite);
-        nb_traite = 0 ;
-      pthread_mutex_unlock(&mutexRnn);
+      gradients_decend(mes_param->rnn, mes_param->AVGgradient, lr, nb_traite);
+      nb_traite = 0 ;
     }
     rnn_zero_the_model(mes_param->gradient);
-
   }
   rnn_free_model(mes_param->gradient);
   rnn_free_model(mes_param->AVGgradient);
   pthread_exit (NULL);
-  
 }
 
 int main(int argc, char **argv)
 {
     // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
+    char filename[] = "SimpleRnn.json";
     data = malloc(sizeof(Data));
     get_data(data);
     double totaltime;
     void *status;
-    int n , r, end, start = 0 , size = 4460;
-    int X = data->ecol , N = 64, Y = 2;
-    float Loss , Acc ;
+    int n , r, end, start = 0 , size = (data->start_val - 1) , stop = 0, e = 0 , X = data->ecol , N = 64, Y = 2;
+    float Loss , Acc , val_loss, best_loss = 100 ;
     
-    // default parameters 
+    // Default parameters 
     lr = 0.01 ;
     epoch = 20;
     NUM_THREADS = 2;
-    MINI_BATCH_SIZE = 1;
-
+    MINI_BATCH_SIZE = 16;
     parse_input_args(argc, argv);
+    n = size/NUM_THREADS;
+
+    /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
@@ -134,22 +131,23 @@ int main(int argc, char **argv)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+    /* Initialize The Central Model */
     rnn = e_calloc(1, sizeof(SimpleRnn));
     rnn_init_model(X, N, Y , rnn, 0); 
-    SimpleRnn* AVGgradient = e_calloc(1, sizeof(SimpleRnn));
-    rnn_init_model(X, N, Y , AVGgradient, 1);
+    SimpleRnn* SumRnn = e_calloc(1, sizeof(SimpleRnn));
+    rnn_init_model(X, N, Y , SumRnn, 1);
     print_summary(rnn, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-              printf("\n====== Training =======\n");
+        printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
-    n = size/NUM_THREADS;
-    for (int e = 0; e < epoch; e++)
+    while (e < epoch && stop < 4)
     {
       start = 0 ; 
       end = n ;
       Loss = Acc = 0.0 ;
       printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
+      /* Create And Start The Threads */
       for ( int i=0; i < NUM_THREADS ; i ++) 
       {
         threads_params[i].rnn = e_calloc(1, sizeof(SimpleRnn));
@@ -161,9 +159,9 @@ int main(int argc, char **argv)
         threads_params[i].acc = 0.0;
         threads_params[i].start = start;
         threads_params[i].end = end;
-
         r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
-        if (r) {
+        if (r)
+        {
           printf("ERROR; pthread_create() return code : %d\n", r);
           exit(-1);
         }
@@ -174,29 +172,43 @@ int main(int argc, char **argv)
           end = end + size%NUM_THREADS ;
         }
       }
-
       /* Free attribute and wait for the other threads */
       pthread_attr_destroy(&attr);
       for(int t=0; t<NUM_THREADS; t++) 
       {
         r = pthread_join(threads[t], &status);
-        if (r) {
+        if (r) 
+        {
           printf("ERROR; return code from pthread_join() is %d\n", r);
           exit(-1);
         }
-        somme_gradient(AVGgradient, threads_params[t].rnn);
+        somme_rnn(SumRnn, threads_params[t].rnn);
         Loss = Loss + threads_params[t].loss ;
         Acc  = Acc  + threads_params[t].acc ;
       }
-      modelUpdate(rnn, AVGgradient, NUM_THREADS);
-      printf("--> Loss : %f  Accuracy : %f \n" , Loss/size, Acc/size);    
+      printf("--> Loss : %f || Accuracy : %f \n" , Loss/size, Acc/size);  
+      // Update The Central RNN
+      modelUpdate(rnn, SumRnn, NUM_THREADS);
+      /* Validation Phase And early Stoping */
+      val_loss = rnn_validation(rnn, data);
+      if (val_loss < 0.9*best_loss)
+      {
+        printf("\nsave");
+        rnn_store_net_layers_as_json(rnn, filename); 
+        stop = 0;
+        best_loss = val_loss;
+      }
+      else
+      {
+        stop = stop + 1;
+      }
+      e = e + 1 ; 
           
     }
 
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
-    
     pthread_mutex_destroy(&mutexRnn);
     rnn_free_model(rnn);
     free(threads);

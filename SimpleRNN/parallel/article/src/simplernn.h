@@ -80,8 +80,6 @@ void mean_gradients(SimpleRnn* gradients, double d);
 
 void print_summary(SimpleRnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
-void rnn_validation(SimpleRnn* rnn, Data* data);
-
 void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache);
 
 void copy_rnn(SimpleRnn* rnn, SimpleRnn* secondrnn);
@@ -90,7 +88,10 @@ void update_vect_model(double *a, double *b, int l , int n);
 
 void modelUpdate(SimpleRnn *rnn, SimpleRnn *grad, int NUM_THREADS);
 
-void somme_gradient(SimpleRnn *grad, SimpleRnn *slavernn);
+void somme_rnn(SimpleRnn *grad, SimpleRnn *slavernn);
 
+float rnn_validation(SimpleRnn* rnn, Data* data);
+
+void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename);
 
 #endif

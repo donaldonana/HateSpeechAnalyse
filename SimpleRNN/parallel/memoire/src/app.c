@@ -73,12 +73,10 @@ void *ThreadTrain (void *params) // Thread Code
   mes_param = ( struct thread_param *) params ;
   mes_param->AVGgradient = e_calloc(1, sizeof(SimpleRnn));
   rnn_init_model(rnn->X, rnn->N, rnn->Y , mes_param->AVGgradient , 1);
-
   int nb_traite = 0;
   
   for (int i = mes_param->start ; i < mes_param->end; i++)
   {
-
     // Forward
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
     // Compute loss
@@ -89,10 +87,9 @@ void *ThreadTrain (void *params) // Thread Code
     rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
-
+    // Update The Central RNN
     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end - 1) )
     {	
-      // Update The Central RNN
       pthread_mutex_lock(&mutexRnn);
         gradients_decend(rnn, mes_param->AVGgradient, lr, nb_traite);
         copy_rnn(rnn, mes_param->rnn);
@@ -100,9 +97,7 @@ void *ThreadTrain (void *params) // Thread Code
       pthread_mutex_unlock(&mutexRnn);
     }
     rnn_zero_the_model(mes_param->gradient);
-
   }
-  
   rnn_free_model(mes_param->gradient);
   rnn_free_model(mes_param->AVGgradient);
   pthread_exit (NULL);
@@ -128,8 +123,8 @@ int main(int argc, char **argv)
     MINI_BATCH_SIZE = 16;
     parse_input_args(argc, argv);
     n = size/NUM_THREADS;
-
-    /* Initialize and Set thread  params */
+                        
+    /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
@@ -192,7 +187,7 @@ int main(int argc, char **argv)
         Acc = Acc + threads_params[t].acc ;
       }
       printf("--> Loss : %f || Accuracy : %f \n" , Loss/size, Acc/size); 
-      // Validation 
+      /* Validation Phase And early Stoping */
       val_loss = rnn_validation(rnn, data);
       if (val_loss < 0.9*best_loss)
       {
