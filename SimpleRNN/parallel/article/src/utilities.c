@@ -808,9 +808,8 @@ float loss_entropy(double *y , double *y_pred, int n)
 }
 
 
-void get_data(Data *data)
+void get_split_data(Data *data, float VALIDATION_SIZE)
 {
-
   printf("\n ============= Data Summary ========== \n");
 
   double a;
@@ -851,7 +850,6 @@ void get_data(Data *data)
 			
 		}
   }
-
 	// X matrix
 	if (fin != NULL)
   {
@@ -865,7 +863,6 @@ void get_data(Data *data)
 			}
 		}
   }
-
 	// Y matrix
 	if (fin != NULL)
   {
@@ -881,11 +878,21 @@ void get_data(Data *data)
 		}
   }
 
-	data->start_val = data->xraw * 0.8 ;
-	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
+  if (VALIDATION_SIZE == 0)
+  {
+	  data->start_test = data->xraw * 0.7 ;
+    data->start_val = data->start_test;
+    data->end_val   = data->xraw - 1;
+  }
+  else
+  {
+	  data->start_val = data->xraw * 0.7 ;
+	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
+    data->start_test = data->end_val + 1 ;
+  }
 	printf(" *Train data : 0 ---> %d  \n " , data->start_val - 1);
-	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val-1);
-	printf("*Test data : %d ---> %d \n " , (data->end_val), data->xraw-1);
+	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val);
+	printf("*Test data : %d ---> %d \n " , (data->start_test), data->xraw-1);
 
 	fclose(fin);
 	fclose(file);

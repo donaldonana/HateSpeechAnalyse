@@ -3,6 +3,7 @@
 #include <math.h>
 #include "utilities.h"
 #include "simplernn.h"
+#include "std_conf.h"
 #include "layers.h"
 #include <time.h>
 #include <string.h>
@@ -11,8 +12,7 @@
 #include <pthread.h>
 
 struct timeval start_t , end_t ;
-
-float lr;
+float lr, VALIDATION_SIZE ;
 int MINI_BATCH_SIZE, epoch  ;
 
 void parse_input_args(int argc, char** argv)
@@ -40,7 +40,15 @@ void parse_input_args(int argc, char** argv)
       if ( MINI_BATCH_SIZE == 0 ) {
         // usage(argv);
       }
-    }  
+    }
+      else if ( !strcmp(argv[a], "-validation") ) {
+      VALIDATION_SIZE =  atof(argv[a + 1]);
+      if ( VALIDATION_SIZE < 0.1 || VALIDATION_SIZE > 0.3) {
+        // usage(argv);
+        VALIDATION_SIZE = 0.1;
+      }
+      
+    }
     a += 1;
 
   }
@@ -49,17 +57,17 @@ void parse_input_args(int argc, char** argv)
 
 int main(int argc, char **argv)
 {
+  FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
 
   Data *data  = malloc(sizeof(Data));
-  get_data(data);
-  char filename[] = "SimpleRnn.json";
   double totaltime;
-  lr = 0.01;
-  MINI_BATCH_SIZE = 16;
-  int X = data->ecol, N = 64, Y = data->ycol;
-  epoch = 10 ;
-  
+  float val_loss, best_loss = 100 ;
+  int X, Y, N = 64, stop = 0, e = 0 ; 
+  lr = 0.01; MINI_BATCH_SIZE = 16; epoch = 10 ;
   parse_input_args(argc, argv);
+  get_split_data(data, VALIDATION_SIZE);
+  Y = data->ycol; X = data->ecol;
+  
   SimpleRnn* rnn = e_calloc(1, sizeof(SimpleRnn));
   SimpleRnn* gradient = e_calloc(1, sizeof(SimpleRnn));
   SimpleRnn* AVGgradient = e_calloc(1, sizeof(SimpleRnn));
@@ -70,19 +78,19 @@ int main(int argc, char **argv)
 
     printf("\n====== Training =======\n");
   
-  float val_loss, best_loss = 100 ;
-  int stop = 0, e = 0 ; 
   gettimeofday(&start_t, NULL);
   while (e < epoch && stop < 4)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
     rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
-    val_loss = rnn_validation(rnn, data);
 
+    /* Validation Phase And Early Stoping */
+    val_loss = rnn_validation(rnn, data);
+    fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
     if (val_loss < 0.9*best_loss)
     {
       printf("\nsave");
-      rnn_store_net_layers_as_json(rnn, filename); 
+      rnn_store_net_layers_as_json(rnn, MODEL_FILE_NAME); 
       stop = 0;
       best_loss = val_loss;
     }
@@ -90,8 +98,7 @@ int main(int argc, char **argv)
     {
       stop = stop + 1;
     }
-
-    e = e + 1 ;
+    e = e + 1 ; 
   }
 
   

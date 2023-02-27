@@ -217,7 +217,7 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
   }
   printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
 
-  return Loss;
+  return Loss/n;
 
 }
 

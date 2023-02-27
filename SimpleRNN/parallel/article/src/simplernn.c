@@ -172,9 +172,7 @@ void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
 
 float rnn_validation(SimpleRnn* rnn, Data* data)
 {
-
   float Loss = 0.0, acc = 0.0;
-
   int start = data->start_val , end = data->end_val , n = 0 ;
   for (int i = start; i <= end; i++)
   {
@@ -186,10 +184,8 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
     acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
     n = n + 1 ;
   }
-  printf("--> Val. Loss : %f || Val. Accuracy : %f \n" , Loss/n, acc/n);  
-
-  return Loss;
-
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
 }
 
 
