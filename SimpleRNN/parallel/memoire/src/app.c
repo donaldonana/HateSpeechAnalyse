@@ -16,7 +16,7 @@ pthread_mutex_t mutexRnn;
 SimpleRnn *rnn;
 Data *data ;
 float lr , VALIDATION_SIZE ;
-int epoch, MINI_BATCH_SIZE, NUM_THREADS ;
+int epoch, MINI_BATCH_SIZE, NUM_THREADS , HIDEN_SIZE;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
@@ -67,9 +67,15 @@ void parse_input_args(int argc, char** argv)
         VALIDATION_SIZE = 0.1;
       }
       
+    } else if ( !strcmp(argv[a], "-hiden") ) {
+      HIDEN_SIZE =  atoi(argv[a + 1]);
+      if ( HIDEN_SIZE < 4 || HIDEN_SIZE > 500) {
+        // usage(argv);
+        HIDEN_SIZE = 16;
+      }
+      
     }
     a += 1;
-
   }
 }
 
@@ -125,10 +131,10 @@ int main(int argc, char **argv)
     float Loss , Acc , val_loss, best_loss = 100 ;
     
     // Set Parameters And Retreive data
-    lr = 0.01; epoch = 20; NUM_THREADS = 2; MINI_BATCH_SIZE = 16; VALIDATION_SIZE = 0; N = 64; 
+    lr = 0.01; epoch = 20; NUM_THREADS = 2; MINI_BATCH_SIZE = 16; VALIDATION_SIZE = 0; HIDEN_SIZE = 64; 
     parse_input_args(argc, argv);
     get_split_data(data, VALIDATION_SIZE);
-    size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; n = size/NUM_THREADS; 
+    size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; N = HIDEN_SIZE; n = size/NUM_THREADS; 
 
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
