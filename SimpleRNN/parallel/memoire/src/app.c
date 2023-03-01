@@ -147,7 +147,7 @@ int main(int argc, char **argv)
       printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
-    while (e < epoch && stop < 4)
+    while (e < epoch )
     {
       start = 0 ; 
       end = n ;

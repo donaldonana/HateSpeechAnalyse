@@ -326,10 +326,10 @@ void  matrix_set_to_zero(double** A, int R, int C)
   }
 }
 
+
 void  matrix_substract(double** A, double** B, int R, int C)
 {
   int r = 0, c = 0;
-
   while ( r < R ) {
     c = 0;
     while ( c < C ) {
@@ -340,10 +340,10 @@ void  matrix_substract(double** A, double** B, int R, int C)
   }
 }
 
+
 void  matrix_scalar_multiply(double** A, double b, int R, int C)
 {
   int r = 0, c = 0;
-
   while ( r < R ) {
     c = 0;
     while ( c < C ) {
@@ -353,6 +353,8 @@ void  matrix_scalar_multiply(double** A, double b, int R, int C)
     ++r;
   }
 }
+
+
 void  matrix_clip(double** A, double limit, int R, int C)
 {
   int r = 0, c = 0;
@@ -370,6 +372,7 @@ void  matrix_clip(double** A, double limit, int R, int C)
   }
 }
 
+
 double one_norm(double* V, int L)
 {
   int l = 0;
@@ -378,9 +381,9 @@ double one_norm(double* V, int L)
     norm += fabs(V[l]);
     ++l;
   }
-
   return norm;
 }
+
 
 int   vectors_fit(double* V, double limit, int L)
 {
@@ -402,6 +405,7 @@ int   vectors_fit(double* V, double limit, int L)
   return msg;
 }
 
+
 int   vectors_clip(double* V, double limit, int L)
 {
   int l = 0;
@@ -419,6 +423,7 @@ int   vectors_clip(double* V, double limit, int L)
 
   return msg;
 }
+
 
 void  matrix_store(double ** A, int R, int C, FILE * fp) 
 {
@@ -441,6 +446,7 @@ void  matrix_store(double ** A, int R, int C, FILE * fp)
 
 }
 
+
 void  vector_print_min_max(char *name, double *V, int L)
 {
   int l = 0;
@@ -455,6 +461,7 @@ void  vector_print_min_max(char *name, double *V, int L)
   }
   printf("%s min: %.10lf, max: %.10lf\n", name, min, max);
 }
+
 
 void  matrix_read(double ** A, int R, int C, FILE * fp) 
 {
@@ -479,6 +486,7 @@ void  matrix_read(double ** A, int R, int C, FILE * fp)
 
 }
 
+
 void  vector_store(double* V, int L, FILE * fp)
 {
   int l = 0;
@@ -494,6 +502,7 @@ void  vector_store(double* V, int L, FILE * fp)
     ++l;
   }
 }
+
 
 void  vector_read(double * V, int L, FILE * fp) 
 {
@@ -514,6 +523,7 @@ void  vector_read(double * V, int L, FILE * fp)
 
 }
 
+
 void  vector_store_ascii(double* V, int L, FILE * fp)
 {
   int l = 0;
@@ -523,6 +533,7 @@ void  vector_store_ascii(double* V, int L, FILE * fp)
     ++l;
   }
 }
+
 
 void  vector_read_ascii(double * V, int L, FILE * fp)
 {
@@ -538,6 +549,7 @@ void  vector_read_ascii(double * V, int L, FILE * fp)
   }
 
 }
+
 
 /*
 *   This function is used to store a JSON file representation
@@ -583,7 +595,7 @@ void  vector_store_as_matrix_json(double* V, int R, int C, FILE * fp)
 
 /*
 *   This function is used to store a JSON file representation
-*   of a LSTM neural network that can be read by an HTML application.
+*   of a RNN neural network that can be read by an HTML application.
 */
 void  vector_store_json(double* V, int L, FILE * fp)
 {
@@ -606,6 +618,7 @@ void  vector_store_json(double* V, int L, FILE * fp)
 
   fprintf(fp, "]");
 }
+
 
 /*
 * Gaussian generator: https://phoxis.org/2013/05/04/generating-random-numbers-from-normal-distribution-in-c/
@@ -638,6 +651,7 @@ randn (double mu, double sigma)
   return (mu + sigma * (double) X1);
 }
 
+
 double sample_normal() {
   double u = ((double) rand() / (RAND_MAX)) * 2 - 1;
   double v = ((double) rand() / (RAND_MAX)) * 2 - 1;
@@ -669,12 +683,10 @@ size_t  e_alloc_total()
 }
 
 
-
-
 double **allocate_dynamic_float_matrix(int row, int col)
 {
-    double **ret_val;
-    int i;
+  double **ret_val;
+  int i;
 
     ret_val = malloc(sizeof(double *) * row);
     if (ret_val == NULL)
@@ -696,58 +708,52 @@ double **allocate_dynamic_float_matrix(int row, int col)
     return ret_val;
 }
 
-
 int **allocate_dynamic_int_matrix(int row, int col)
 {
-    int **ret_val;
-    int i;
-
-    ret_val = malloc(sizeof(int *) * row);
-    if (ret_val == NULL)
+  int **ret_val;
+  int i;
+  ret_val = malloc(sizeof(int *) * row);
+  if (ret_val == NULL)
+  {
+    perror("memory allocation failure");
+    exit(EXIT_FAILURE);
+  }
+  for (i = 0; i < row; ++i)
+  {
+    ret_val[i] = malloc(sizeof(int) * col);
+    if (ret_val[i] == NULL)
     {
-        perror("memory allocation failure");
-        exit(EXIT_FAILURE);
+      perror("memory allocation failure");
+      exit(EXIT_FAILURE);
     }
-
-    for (i = 0; i < row; ++i)
-    {
-        ret_val[i] = malloc(sizeof(int) * col);
-        if (ret_val[i] == NULL)
-        {
-            perror("memory allocation failure");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    return ret_val;
+  }
+  return ret_val;
 }
 
 
 void deallocate_dynamic_float_matrix(float **matrix, int row)
 {
-    int i;
-
-    for (i = 0; i < row; ++i)
-    {
-        free(matrix[i]);
-		matrix[i] = NULL;
-    }
-    free(matrix);
+  int i;
+  for (i = 0; i < row; ++i)
+  {
+    free(matrix[i]);
+	  matrix[i] = NULL;
+  }
+  free(matrix);
 }
+
 
 void deallocate_dynamic_int_matrix(int **matrix, int row)
 {
-
-    int i;
-
-    for (i = 0; i < row; ++i)
-    {
-        free(matrix[i]);
+  int i;
+  for (i = 0; i < row; ++i)
+  {
+    free(matrix[i]);
 		matrix[i] = NULL;
-    }
-    free(matrix);
-
+  }
+  free(matrix);
 }
+
 
 /* uniform distribution, (0..1] */
 float drand()   
@@ -755,11 +761,13 @@ float drand()
   return (rand()+1.0)/(RAND_MAX+1.0);
 }
 
+
 /* normal distribution, centered on 0, std dev 1 */
 float random_normal() 
 {
   return sqrt(-2*log(drand())) * cos(2*M_PI*drand());
 }
+
 
 float accuracy(float acc, double *y, double *y_pred, int n)
 {
@@ -772,6 +780,7 @@ float accuracy(float acc, double *y, double *y_pred, int n)
 	}
 	return acc;
 }
+
 
 int ArgMax(double *y, int n)
 {
@@ -788,6 +797,7 @@ int ArgMax(double *y, int n)
 	return indMax ;
 }
 
+
 float binary_loss_entropy(double *y , double *y_pred, int n) 
 {
   float loss;
@@ -796,6 +806,7 @@ float binary_loss_entropy(double *y , double *y_pred, int n)
   loss = -1*log(y_pred[idx]);
   return loss ;
 }
+
 
 float loss_entropy(double *y , double *y_pred, int n) 
 {
@@ -836,7 +847,7 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
 	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
 	data->Y = allocate_dynamic_float_matrix(data->yraw, data->ycol);
 
-	// embeddind matrix
+	// Embeddind matrix
 	if (file != NULL)
   {
 		for (int i = 0; i < data->eraw; i++)

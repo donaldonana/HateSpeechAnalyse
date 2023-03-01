@@ -236,7 +236,6 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
 
 }
 
-
 void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename)
 {
   FILE * fp; 

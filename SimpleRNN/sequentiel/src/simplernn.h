@@ -18,8 +18,6 @@
 #include "assert.h"
 
 
-
-
 typedef struct simple_rnn_cache {
   double* h_old;
   double* h;
@@ -32,15 +30,15 @@ typedef struct SimpleRnn
   unsigned int X; /**< Number of input nodes (input size) */
   unsigned int N; /**< Number of neurons (hiden size) */
   unsigned int Y; /**< Number of output nodes (output size) */
-  unsigned int S; /**< lstm_model_t.X + lstm_model_t.N */
+  unsigned int S; /**< rnn.X + rnn.N */
 
-  // The model 
+  // The model Parameters
   double* Wh;
   double* Wy;
   double* bh;
   double* by;
 
-  // rnn output probability vector 
+  // RNN output probability vector 
   double* probs; 
 
   // cache for gradient
@@ -48,13 +46,13 @@ typedef struct SimpleRnn
   double* dldXh;
   double* dldy;
 
-  // gate and memory cell cache for time step
+  // Memory cell cache for time step
   simple_rnn_cache** cache;
 
 } SimpleRnn;
 
 
-int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros);
+int  rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros);
 
 void rnn_free_model(SimpleRnn *rnn);
 
@@ -75,8 +73,6 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
 void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l);
 
 void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry);
-
-void mean_gradients(SimpleRnn* gradients, double d);
 
 void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr);
 

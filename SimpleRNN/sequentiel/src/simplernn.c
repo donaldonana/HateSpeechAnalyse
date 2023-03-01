@@ -1,8 +1,6 @@
 
 #include "simplernn.h"
 
-
-
 // Inputs, Neurons, Outputs, &lstm model, zeros
 int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
 {
@@ -17,7 +15,7 @@ int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
   } else {
     rnn->Wh = get_random_vector(N * S, S);
     rnn->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(rnn, X, N, Y, 100);
+    alloc_cache_array(rnn, X, N, Y, 200);
   }
   rnn->bh = get_zero_vector(N);
   rnn->by = get_zero_vector(Y);
@@ -28,6 +26,7 @@ int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
 
   return 0;
 }
+
 
 void rnn_free_model(SimpleRnn* rnn)
 {
@@ -41,25 +40,25 @@ void rnn_free_model(SimpleRnn* rnn)
   free(rnn);
 }
 
+
 // model, input, state and cache values, &probs, whether or not to apply softmax
 void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data)
 {
-
   int N, S, i , n, t ;
   double  *X_one_hot;
   N = model->N;
   S = model->S;
   n = (data->xcol - 1) ;
-
   double *hprev;
   if ( init_zero_vector(&hprev, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
- 
+  // Over All The Sequence
   for (t = 0; t <= n ; t++)
   {
+    // Concat. h_old and xt ; [h_old;xt] 
     i = 0 ;
     X_one_hot = cache[t]->X;
     while ( i < S ) 
@@ -74,7 +73,7 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
     // ht = tanh(Wh.[h_old;xt] + bh)
     fully_connected_forward(cache[t]->h, model->Wh, X_one_hot, model->bh, N, S);
     tanh_forward(cache[t]->h, cache[t]->h, N);
-
+    // Save hprev
     copy_vector(cache[t]->h_old, hprev, N);
     copy_vector(hprev, cache[t]->h, N);
 
@@ -83,24 +82,22 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
   fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
   softmax_layers_forward(model->probs, model->probs, model->Y);
   
+  // Free all tempory Variable
   free_vector(&hprev);
-
 }
 
 
 void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
 {
- 
   simple_rnn_cache* cache = NULL;
   double *dldh, *dldy;
   int N, Y, S;
   N = model->N;
   Y = model->Y;
   S = model->S;
-  
+  // Tempory variable for gradient computation
   double *bias = malloc(N*sizeof(double));
   double *weigth = malloc((N*S)*sizeof(double));
-
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
@@ -111,10 +108,10 @@ void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** cach
   dldh  = model->dldh;
   dldy  = model->dldy;
   copy_vector(dldy, model->probs, Y);
-
   vectors_substract(dldy, y, model->Y);
- 
+  // Compute dldby , dldwy and dldh
   fully_connected_backward(dldy, model->Wy, caches[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
+  // Compute dldwh , dldbh and update dldh
   for (int t = n ; t >= 0; t--)
   {
     cache = caches[t];
@@ -125,10 +122,12 @@ void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** cach
     vectors_add(gradients->bh, bias, N);
     copy_vector(dldh, gradients->dldXh, N);
   }
+  // Free all tempory Variable
   free_vector(&bias);
   free_vector(&weigth);
   free_vector(&tmp);
 }
+
 
 void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
 {
@@ -136,6 +135,7 @@ void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
   free_vector(&(cache_to_be_freed)->h_old);
   free_vector(&(cache_to_be_freed)->X);
 }
+
 
 // A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
 void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n) 
@@ -146,26 +146,6 @@ void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n)
   vectors_substract_scalar_multiply(model->Wh, gradients->Wh, model->N * model->S, LR);
   vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, LR);
   vectors_substract_scalar_multiply(model->bh, gradients->bh, model->N, LR);
-}
-
-
-void rnn_zero_the_model(SimpleRnn * model)
-{
-  vector_set_to_zero(model->Wy, model->Y * model->N);
-  vector_set_to_zero(model->Wh, model->N * model->S);
-  vector_set_to_zero(model->by, model->Y);
-  vector_set_to_zero(model->bh, model->N);
-  vector_set_to_zero(model->dldh, model->N);
-  vector_set_to_zero(model->dldXh, model->S);
-}
-
-
-void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
-{
-  vectors_add(gradients->Wy, gradients_entry->Wy, gradients->Y * gradients->N);
-  vectors_add(gradients->Wh, gradients_entry->Wh, gradients->N * gradients->S);
-  vectors_add(gradients->by, gradients_entry->by, gradients->Y);
-  vectors_add(gradients->bh, gradients_entry->bh, gradients->N);
 }
 
 
@@ -184,7 +164,7 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
     // Backforward
     rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
     sum_gradients(AVGgradient, gradient);
-
+    // Updating
     nb_traite = nb_traite + 1 ;
     if (nb_traite == mini_batch_size || i == end)
     {
@@ -203,9 +183,7 @@ void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, i
 
 float rnn_validation(SimpleRnn* rnn, Data* data)
 {
-
   float Loss = 0.0, acc = 0.0;
-
   int start = data->start_val , end = data->end_val , n = 0 ;
   for (int i = start; i <= end; i++)
   {
@@ -235,17 +213,15 @@ void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr)
 	printf(" output Size  : %d \n",rnn->Y);
 }
 
+
 void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename)
 {
   FILE * fp; 
-
   fp = fopen(filename, "w");
-  
   if ( fp == NULL ) {
     printf("Failed to open file: %s for writing.\n", filename);
     return;
   }
-  
     fprintf(fp, "{");
     fprintf(fp, "\n\t\"InputSize \": %d",   rnn->X);
     fprintf(fp, ",\n\t\"HiddenSize \": %d", rnn->N);
@@ -268,6 +244,26 @@ void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename)
 }
 
 
+void rnn_zero_the_model(SimpleRnn * model)
+{
+  vector_set_to_zero(model->Wy, model->Y * model->N);
+  vector_set_to_zero(model->Wh, model->N * model->S);
+  vector_set_to_zero(model->by, model->Y);
+  vector_set_to_zero(model->bh, model->N);
+  vector_set_to_zero(model->dldh, model->N);
+  vector_set_to_zero(model->dldXh, model->S);
+}
+
+
+void sum_gradients(SimpleRnn* gradients, SimpleRnn* gradients_entry)
+{
+  vectors_add(gradients->Wy, gradients_entry->Wy, gradients->Y * gradients->N);
+  vectors_add(gradients->Wh, gradients_entry->Wh, gradients->N * gradients->S);
+  vectors_add(gradients->by, gradients_entry->by, gradients->Y);
+  vectors_add(gradients->bh, gradients_entry->bh, gradients->N);
+}
+
+
 void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l)
 {
   rnn->cache = malloc((l)*sizeof(simple_rnn_cache));
@@ -277,6 +273,7 @@ void alloc_cache_array(SimpleRnn* rnn, int X, int N, int Y, int l)
     rnn_cache_container_init(X, N, Y, rnn->cache[t]);
   }
 }
+
 
 void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache )
 {
