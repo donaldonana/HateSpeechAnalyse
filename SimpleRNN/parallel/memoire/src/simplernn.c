@@ -16,7 +16,7 @@ int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
   } else {
     rnn->Wh = get_random_vector(N * S, S);
     rnn->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(rnn, X, N, Y, 100);
+    alloc_cache_array(rnn, X, N, Y, 200);
   }
   rnn->bh = get_zero_vector(N);
   rnn->by = get_zero_vector(Y);
@@ -75,7 +75,6 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
     // Save hprev
     copy_vector(cache[t]->h_old, hprev, N);
     copy_vector(hprev, cache[t]->h, N);
-
   }
   // probs = softmax ( Wy*h + by )
   fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
@@ -255,7 +254,6 @@ void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache )
   cache->h_old = get_zero_vector(N);
   cache->X = get_zero_vector(S);
 }
-
 
 void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
 {

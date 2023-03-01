@@ -76,6 +76,7 @@ void parse_input_args(int argc, char** argv)
       
     }
     a += 1;
+    
   }
 }
 
@@ -181,9 +182,8 @@ int main(int argc, char **argv)
         end   = end + n;
         if (i == (NUM_THREADS-1) )
         {
-           end = end + size%NUM_THREADS ;
+          end = end + size%NUM_THREADS ;
         }
-
       }
       /* Free attribute and wait for the other threads */
       pthread_attr_destroy(&attr);
@@ -217,7 +217,6 @@ int main(int argc, char **argv)
       }
       e = e + 1 ; 
     }
-
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
@@ -226,5 +225,6 @@ int main(int argc, char **argv)
     free(threads);
     free(threads_params);
     pthread_exit(NULL);
+
 }
 
