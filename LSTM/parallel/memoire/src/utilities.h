@@ -48,13 +48,12 @@ struct Data
     int ycol;
 	int start_val;
 	int end_val;
+    int start_test;
 	int **X;
     double **Y;
     double **embedding;
-
 };
 
-void get_data(Data *data);
 
 double **allocate_dynamic_float_matrix(int row, int col);
 
@@ -141,6 +140,9 @@ float binary_loss_entropy(double *y , double *y_pred, int n);
 int ArgMax(double *y, int n);
 
 float accuracy(float acc, double *y, double *y_pred, int n);
+
+void   get_split_data(Data *data, float VALIDATION_SIZE);
+
 
 
 

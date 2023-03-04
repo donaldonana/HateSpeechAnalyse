@@ -806,8 +806,8 @@ float loss_entropy(double *y , double *y_pred, int n)
 }
 
 
-void get_data(Data *data){
-
+void get_split_data(Data *data, float VALIDATION_SIZE)
+{
   printf("\n ============= Data Summary ========== \n");
 
   double a;
@@ -815,15 +815,16 @@ void get_data(Data *data){
   FILE *fin = NULL;
   FILE *file = NULL;
 	FILE *stream = NULL;
+
   fin = fopen("../../../data/data.txt" , "r");
   if(fscanf(fin, "%d" , &data->xraw)){}
   if(fscanf(fin, "%d" , &data->xcol))
-  {printf(" data shape : (%d , %d) \n" , data->xraw , data->xcol);}
+  {printf(" *Data shape : (%d , %d) \n" , data->xraw , data->xcol);}
 
   file = fopen("../../../data/embedding.txt" , "r");
 	if(fscanf(file, "%d" , &data->eraw)){}
   if( fscanf(file, "%d" ,&data->ecol))
-  {printf(" Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
+  {printf(" *Embedding Matrix shape : (%d , %d) \n" , data->eraw , data->ecol);}
 
   stream = fopen("../../../data/label.txt" , "r");
 	if(fscanf(stream,  "%d" , &data->yraw)){}
@@ -833,7 +834,7 @@ void get_data(Data *data){
 	data->X = allocate_dynamic_int_matrix(data->xraw, data->xcol);
 	data->Y = allocate_dynamic_float_matrix(data->yraw, data->ycol);
 
-	// embeddind matrix
+	// Embeddind matrix
 	if (file != NULL)
   {
 		for (int i = 0; i < data->eraw; i++)
@@ -847,7 +848,6 @@ void get_data(Data *data){
 			
 		}
   }
-
 	// X matrix
 	if (fin != NULL)
   {
@@ -861,7 +861,6 @@ void get_data(Data *data){
 			}
 		}
   }
-
 	// Y matrix
 	if (fin != NULL)
   {
@@ -874,20 +873,27 @@ void get_data(Data *data){
 				data->Y[i][j] = b;
 				}
 			}
-
 		}
   }
 
-	data->start_val = data->xraw * 0.7 ;
-	data->end_val = data->start_val + (data->xraw * 0.1 - 1);
-	// printf(" Train data from index 1 to index %d  \n " , data->start_val);
-	// printf("Validation data from index %d to index %d  \n " , (data->start_val+1), data->end_val);
-	// printf("Test  data from index %d to index %d \n " , (data->end_val+1), data->xraw);
+  if (VALIDATION_SIZE == 0)
+  {
+	  data->start_test = data->xraw * 0.7 ;
+    data->start_val = data->start_test;
+    data->end_val   = data->xraw - 1;
+  }
+  else
+  {
+	  data->start_val = data->xraw * 0.7 ;
+	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
+    data->start_test = data->end_val + 1 ;
+  }
+	printf(" *Train data : 0 ---> %d  \n " , data->start_val - 1);
+	printf("*Validation data : %d ---> %d  \n " , (data->start_val), data->end_val);
+	printf("*Test data : %d ---> %d \n " , (data->start_test), data->xraw-1);
 
 	fclose(fin);
 	fclose(file);
 	fclose(stream);
-
 }
-
 

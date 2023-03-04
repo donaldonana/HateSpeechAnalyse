@@ -429,16 +429,25 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
 }
 
 
- 
-void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){
-
-  lstm->cache = malloc((l)*sizeof(lstm_cache));
-  for (int t = 0; t < l; t++)
+float lstm_validation(lstm_rnn* lstm, Data* data)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_val , end = data->end_val , n = 0 ;
+  for (int i = start; i <= end; i++)
   {
-    lstm->cache[t] = lstm_cache_container_init(X, N, Y);
+    // Forward
+    lstm_forward(lstm, data->X[i], lstm->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol);
+    n = n + 1 ;
   }
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
 
 }
+
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS){
 
@@ -452,6 +461,17 @@ void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_
 	printf(" output Size  : %d \n",lstm->Y);
 	printf(" Num. Threads : %d \n", NUM_THREADS);
 
+
+}
+
+
+void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){
+
+  lstm->cache = malloc((l)*sizeof(lstm_cache));
+  for (int t = 0; t < l; t++)
+  {
+    lstm->cache[t] = lstm_cache_container_init(X, N, Y);
+  }
 
 }
 
