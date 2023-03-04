@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   print_summary(rnn, epoch, MINI_BATCH_SIZE, lr);
 
     printf("\n====== Training =======\n");
-  
+    
   gettimeofday(&start_t, NULL);
 
   while (e < epoch && stop < 4)

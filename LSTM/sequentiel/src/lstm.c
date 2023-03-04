@@ -105,10 +105,12 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
- 
+
+  // Over All The Sequence
   for (t = 0; t <= n ; t++)
   {
 
+    // Concat. h_old and xt ; [h_old;xt] 
     i = 0 ;
     X_one_hot = cache[t]->X;
     while ( i < S ) 
@@ -277,20 +279,22 @@ void lstm_cache_container_free(lstm_cache* cache_to_be_freed)
 
 
 // A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
-void gradients_decend(lstm_rnn* model, lstm_rnn* gradients, float lr) {
+void gradients_decend(lstm_rnn* model, lstm_rnn* gradients, float lr, int n) {
+
+  float LR = ( 1/(float)n )*lr;
 
   // Computing A = A - alpha * m
-  vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, lr);
-  vectors_substract_scalar_multiply(model->Wi, gradients->Wi, model->N * model->S, lr);
-  vectors_substract_scalar_multiply(model->Wc, gradients->Wc, model->N * model->S, lr);
-  vectors_substract_scalar_multiply(model->Wo, gradients->Wo, model->N * model->S, lr);
-  vectors_substract_scalar_multiply(model->Wf, gradients->Wf, model->N * model->S, lr);
+  vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, LR);
+  vectors_substract_scalar_multiply(model->Wi, gradients->Wi, model->N * model->S, LR);
+  vectors_substract_scalar_multiply(model->Wc, gradients->Wc, model->N * model->S, LR);
+  vectors_substract_scalar_multiply(model->Wo, gradients->Wo, model->N * model->S, LR);
+  vectors_substract_scalar_multiply(model->Wf, gradients->Wf, model->N * model->S, LR);
 
-  vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, lr);
-  vectors_substract_scalar_multiply(model->bi, gradients->bi, model->N, lr);
-  vectors_substract_scalar_multiply(model->bc, gradients->bc, model->N, lr);
-  vectors_substract_scalar_multiply(model->bf, gradients->bf, model->N, lr);
-  vectors_substract_scalar_multiply(model->bo, gradients->bo, model->N, lr);
+  vectors_substract_scalar_multiply(model->by, gradients->by, model->Y, LR);
+  vectors_substract_scalar_multiply(model->bi, gradients->bi, model->N, LR);
+  vectors_substract_scalar_multiply(model->bc, gradients->bc, model->N, LR);
+  vectors_substract_scalar_multiply(model->bf, gradients->bf, model->N, LR);
+  vectors_substract_scalar_multiply(model->bo, gradients->bo, model->N, LR);
 }
 
 
@@ -354,28 +358,27 @@ void mean_gradients(lstm_rnn* gradients, double d)
 
 }
 
-void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, int mini_batch_size, float lr, Data* data){
+void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa)
+{
 
     float Loss = 0.0, acc = 0.0;
-    int nb_traite  = 0 ; 
-    for (int i = 0; i < 4460; i++)
+    int end = data->start_val - 1, nb_traite = 0 ;  
+    for (int i = 0; i <= end; i++)
     {
       // Forward
       lstm_forward(lstm, data->X[i], lstm->cache, data);
-      // Compute loss
+      // Compute Loss
       Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
-      // Compute accuracy
+      // Compute Accuracy
       acc = accuracy(acc, data->Y[i] , lstm->probs, data->ycol);
       // Backforward
       lstm_backforward(lstm, data->Y[i], (data->xcol-1), lstm->cache, gradient);
       sum_gradients(AVGgradient, gradient);
-      
+      // Updating
       nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 4459)
+      if (nb_traite == mini_batch_size || i == end)
       {
-        mean_gradients(AVGgradient, nb_traite);
-        // update
-        gradients_decend(lstm, AVGgradient, lr);
+        gradients_decend(lstm, AVGgradient, lr, nb_traite);
         lstm_zero_the_model(AVGgradient);
         nb_traite = 0 ;
       }
@@ -384,9 +387,82 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       set_vector_zero(lstm->c_prev, lstm->N);
     }
     
-    printf("--> Loss : %f  Accuracy : %f \n" , Loss/4460, acc/4460);  
+    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
+    fprintf(fl,"%d,%.6f\n", e , Loss/end);
+    fprintf(fa,"%d,%.6f\n", e , acc/end);
 
 }
+
+
+
+float lstm_validation(lstm_rnn* lstm, Data* data)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_val , end = data->end_val , n = 0 ;
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    lstm_forward(lstm, data->X[i], lstm->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
+
+}
+
+
+void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
+{
+  FILE * fp;
+
+  fp = fopen(filename, "w");
+
+  if ( fp == NULL ) {
+    printf("Failed to open file: %s for writing.\n", filename);
+    return;
+  }
+ 
+  
+    fprintf(fp, "{");
+    fprintf(fp, "\n\t\"InputSize \": %d",  lstm->X);
+    fprintf(fp, ",\n\t\"HiddenSize \": %d", lstm->N);
+    fprintf(fp, ",\n\t\"OutputSize \": %d", lstm->Y);
+
+    fprintf(fp, ",\n\t\"Wy\": ");
+    vector_store_as_matrix_json(lstm->Wy, lstm->Y, lstm->N, fp);
+    fprintf(fp, ",\n\t\"Wi\": ");
+    vector_store_as_matrix_json(lstm->Wi, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wc\": ");
+    vector_store_as_matrix_json(lstm->Wc, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wo\": ");
+    vector_store_as_matrix_json(lstm->Wo, lstm->N, lstm->S, fp);
+    fprintf(fp, ",\n\t\"Wf\": ");
+    vector_store_as_matrix_json(lstm->Wf, lstm->N, lstm->S, fp);
+
+    fprintf(fp, ",\n\t\"by\": ");
+    vector_store_json(lstm->by, lstm->Y, fp);
+    fprintf(fp, ",\n\t\"bi\": ");
+    vector_store_json(lstm->bi, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bc\": ");
+    vector_store_json(lstm->bc, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bf\": ");
+    vector_store_json(lstm->bf, lstm->N, fp);
+    fprintf(fp, ",\n\t\"bo\": ");
+    vector_store_json(lstm->bo, lstm->N, fp);
+
+    fprintf(fp, "\n}");
+
+
+  fclose(fp);
+
+}
+
+
+
 
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){
 

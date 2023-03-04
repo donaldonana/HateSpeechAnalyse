@@ -91,15 +91,17 @@ void lstm_free_model(lstm_rnn* lstm);
 
 void lstm_zero_the_model(lstm_rnn *model);
 
-void gradients_decend(lstm_rnn* model, lstm_rnn* gradients, float lr);
+void gradients_decend(lstm_rnn* model, lstm_rnn* gradients, float lr, int n);
 
-void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient,  int mini_batch_size, float lr, Data* data);
+void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient,  int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa);
 
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l);
 
 void sum_gradients(lstm_rnn* gradients, lstm_rnn* gradients_entry);
 
-void mean_gradients(lstm_rnn* gradients, double d);
+float lstm_validation(lstm_rnn* lstm, Data* data);
+
+void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename);
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr);
 

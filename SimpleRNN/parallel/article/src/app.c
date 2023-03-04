@@ -95,9 +95,9 @@ void *ThreadTrain (void *params) // Code du thread
   {
     // Forward
     rnn_forward(mes_param->rnn, data->X[i], mes_param->rnn->cache, data);
-    // Compute loss
+    // Compute Loss
     mes_param->loss = mes_param->loss + loss_entropy(data->Y[i], mes_param->rnn->probs, data->ycol);
-    // Compute accuracy training
+    // Compute Accuracy training
     mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->rnn->probs, data->ycol);
     // Backforward
     rnn_backforward(mes_param->rnn, data->Y[i], (data->xcol-1), mes_param->rnn->cache, mes_param->gradient);

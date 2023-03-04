@@ -140,7 +140,7 @@ void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
 // A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
 void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n) 
 {
-  float LR = ( 1/(float)n )*lr;
+  float LR = ( 1/(float)n )*lr; 
   // Computing A = A - alpha * m
   vectors_substract_scalar_multiply(model->Wy, gradients->Wy, model->Y * model->N, LR);
   vectors_substract_scalar_multiply(model->Wh, gradients->Wh, model->N * model->S, LR);

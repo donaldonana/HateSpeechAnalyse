@@ -3,6 +3,7 @@
 #include <math.h>
 #include "utilities.h"
 #include "lstm.h"
+#include "std_conf.h"
 #include "layers.h"
 #include <time.h>
 #include <string.h>
@@ -11,11 +12,8 @@
 #include <pthread.h>
 
 struct timeval start_t , end_t ;
-
-
-float lr;
-int MINI_BATCH_SIZE, epoch  ;
-
+float lr, VALIDATION_SIZE ; 
+int MINI_BATCH_SIZE, epoch , HIDEN_SIZE;
 
 void parse_input_args(int argc, char** argv)
 {
@@ -42,7 +40,22 @@ void parse_input_args(int argc, char** argv)
       if ( MINI_BATCH_SIZE == 0 ) {
         // usage(argv);
       }
-    }  
+    } else if ( !strcmp(argv[a], "-validation") ) {
+      VALIDATION_SIZE =  atof(argv[a + 1]);
+      if ( VALIDATION_SIZE < 0.1 || VALIDATION_SIZE > 0.3) {
+        // usage(argv);
+        VALIDATION_SIZE = 0.1;
+      }
+      
+    }
+      else if ( !strcmp(argv[a], "-hiden") ) {
+      HIDEN_SIZE =  atoi(argv[a + 1]);
+      if ( HIDEN_SIZE < 4 || HIDEN_SIZE > 500) {
+        // usage(argv);
+        HIDEN_SIZE = 16;
+      }
+      
+    }
     a += 1;
 
   }
@@ -52,16 +65,18 @@ void parse_input_args(int argc, char** argv)
 
 int main(int argc, char **argv)
 {
+  FILE *fl  = fopen(LOSS_FILE_NAME, "w");
+  FILE *fa  = fopen(ACC_FILE_NAME,  "w");
+  FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
 
   Data *data  = malloc(sizeof(Data));
-  get_data(data);
-
-    double totaltime;
-
-  lr = 0.01;
-  MINI_BATCH_SIZE = 1;
-  int X = data->ecol, N = 64, Y = 2;
-  epoch = 15 ;
+  double totaltime;
+  float val_loss, best_loss = 100 ;
+  int X, Y, N, stop = 0, e = 0 ; 
+  lr = 0.01; MINI_BATCH_SIZE = 16; epoch = 10 ; HIDEN_SIZE = 64 ;
+  parse_input_args(argc, argv);
+  get_split_data(data, VALIDATION_SIZE);
+  Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ;
   
   parse_input_args(argc, argv);
   lstm_rnn* lstm = e_calloc(1, sizeof(lstm_rnn));
@@ -73,13 +88,30 @@ int main(int argc, char **argv)
   print_summary(lstm, epoch, MINI_BATCH_SIZE, lr);
 
 
-      printf("\n====== Training =======\n");
+    printf("\n====== Training =======\n");
       
   gettimeofday(&start_t, NULL);
-  for (int e = 0; e < epoch ; e++)
+
+  while (e < epoch && stop < 4)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-    lstm_training(lstm, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
+    // Training 
+    lstm_training(lstm, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data, e, fl, fa);
+    // Validation And Early Stoping
+    val_loss = lstm_validation(lstm, data);
+    fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
+    if (val_loss < 0.9*best_loss)
+    {
+      printf("\nsave");
+      lstm_store_net_layers_as_json(lstm, MODEL_FILE_NAME); 
+      stop = 0;
+      best_loss = val_loss;
+    }
+    else
+    {
+      stop = stop + 1;
+    }
+    e = e + 1 ; 
   }
   
   gettimeofday(&end_t, NULL);
