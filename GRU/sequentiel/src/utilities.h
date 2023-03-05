@@ -35,7 +35,6 @@
 #include <limits.h>
 
 
-
 typedef struct Data Data;
 struct Data
 {
@@ -47,14 +46,14 @@ struct Data
     int ycol;
 	int start_val;
 	int end_val;
+    int start_test;
 	int **X;
     double **Y;
     double **embedding;
 
 };
 
-void get_data(Data *data);
-
+ 
 double **allocate_dynamic_float_matrix(int row, int col);
 
 int **allocate_dynamic_int_matrix(int row, int col);
@@ -142,6 +141,9 @@ size_t  e_alloc_total();
     int ArgMax(double *y, int n);
 
     float accuracy(float acc, double *y, double *y_pred, int n);
+
+
+void get_split_data(Data *data, float VALIDATION_SIZE);
 
 
 

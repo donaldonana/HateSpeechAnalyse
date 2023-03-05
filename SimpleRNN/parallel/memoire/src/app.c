@@ -107,8 +107,8 @@ void *ThreadTrain (void *params) // Thread Code
       pthread_mutex_lock(&mutexRnn);
         gradients_decend(rnn, mes_param->AVGgradient, lr, nb_traite);
         copy_rnn(rnn, mes_param->rnn);
-        nb_traite = 0 ;
       pthread_mutex_unlock(&mutexRnn);
+      nb_traite = 0 ;
     }
     rnn_zero_the_model(mes_param->gradient);
   }
@@ -132,8 +132,7 @@ int main(int argc, char **argv)
     float Loss , Acc , val_loss, best_loss = 100 ;
     
     // Set Parameters And Retreive data
-    lr = 0.01; e
-poch = 20; NUM_THREADS = 2; MINI_BATCH_SIZE = 16; VALIDATION_SIZE = 0; HIDEN_SIZE = 64; 
+    lr = 0.01; epoch = 20; NUM_THREADS = 2; MINI_BATCH_SIZE = 16; VALIDATION_SIZE = 0; HIDEN_SIZE = 64; 
     parse_input_args(argc, argv);
     get_split_data(data, VALIDATION_SIZE);
     size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; N = HIDEN_SIZE; n = size/NUM_THREADS; 

@@ -114,5 +114,9 @@ void modelUpdate(lstm_rnn *lstm, lstm_rnn *grad, int NUM_THREADS);
 
 void update_vect_model(double *a, double *b, int l , int n);
 
+float lstm_validation(lstm_rnn* lstm, Data* data);
+
+void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename);
+
 
 #endif

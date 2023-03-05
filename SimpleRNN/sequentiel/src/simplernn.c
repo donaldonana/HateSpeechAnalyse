@@ -1,7 +1,7 @@
 
 #include "simplernn.h"
 
-// Inputs, Neurons, Outputs, &lstm model, zeros
+// Inputs, Neurons, Outputs, &rnn model, zeros
 int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
 {
   int S = X + N;

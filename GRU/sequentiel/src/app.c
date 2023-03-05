@@ -3,6 +3,7 @@
 #include <math.h>
 #include "utilities.h"
 #include "gru.h"
+#include "std_conf.h"
 #include "layers.h"
 #include <time.h>
 #include <string.h>
@@ -10,9 +11,8 @@
 #include <pthread.h>
 
 struct timeval start_t , end_t ;
-
-float lr;
-int MINI_BATCH_SIZE, epoch  ;
+float lr, VALIDATION_SIZE ; 
+int MINI_BATCH_SIZE, epoch , HIDEN_SIZE;
 
 void parse_input_args(int argc, char** argv)
 {
@@ -39,25 +39,42 @@ void parse_input_args(int argc, char** argv)
       if ( MINI_BATCH_SIZE == 0 ) {
         // usage(argv);
       }
-    }  
+    } else if ( !strcmp(argv[a], "-validation") ) {
+      VALIDATION_SIZE =  atof(argv[a + 1]);
+      if ( VALIDATION_SIZE < 0.1 || VALIDATION_SIZE > 0.3) {
+        // usage(argv);
+        VALIDATION_SIZE = 0.1;
+      }
+      
+    }
+      else if ( !strcmp(argv[a], "-hiden") ) {
+      HIDEN_SIZE =  atoi(argv[a + 1]);
+      if ( HIDEN_SIZE < 4 || HIDEN_SIZE > 500) {
+        // usage(argv);
+        HIDEN_SIZE = 16;
+      }
+      
+    }
     a += 1;
 
   }
 }
 
 
-
 int main(int argc, char **argv)
 {
+  FILE *fl  = fopen(LOSS_FILE_NAME, "w");
+  FILE *fa  = fopen(ACC_FILE_NAME,  "w");
+  FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
 
   Data *data  = malloc(sizeof(Data));
-  get_data(data);
-
-  lr = 0.01;
   double totaltime;
-  MINI_BATCH_SIZE = 1;
-  int X = data->ecol, N = 64, Y = 2;
-  epoch = 15 ;
+  float val_loss, best_loss = 100 ;
+  int X, Y, N, stop = 0, e = 0 ; 
+  lr = 0.01; MINI_BATCH_SIZE = 16; epoch = 10 ; HIDEN_SIZE = 64 ;
+  parse_input_args(argc, argv);
+  get_split_data(data, VALIDATION_SIZE);
+  Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ;
   
   parse_input_args(argc, argv);
   gru_rnn* gru = e_calloc(1, sizeof(gru_rnn));
@@ -71,19 +88,37 @@ int main(int argc, char **argv)
     printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
-  for (int e = 0; e < epoch ; e++)
+  while (e < epoch && stop < 4)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-    gru_training(gru, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data);
+    // Training 
+    gru_training(gru, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data, e+1, fl , fa);
+    // Validation And Early Stoping
+    val_loss = gru_validation(gru, data);
+    fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
+    if (val_loss < 0.9*best_loss)
+    {
+      printf("\nsave");
+      gru_store_net_layers_as_json(gru, MODEL_FILE_NAME); 
+      stop = 0;
+      best_loss = val_loss;
+    }
+    else
+    {
+      stop = stop + 1;
+    }
+    e = e + 1 ; 
   }
 
   gettimeofday(&end_t, NULL);
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
   printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
-    
+  // Free section.
   gru_free_model(gru);
   gru_free_model(gradient);
   gru_free_model(AVGgradient);
-  printf("\n initialization finish. \n");
+  fclose(fl);
+  fclose(fv);
+  fclose(fa);
 
 }

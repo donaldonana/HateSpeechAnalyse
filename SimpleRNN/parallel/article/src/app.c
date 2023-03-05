@@ -88,7 +88,6 @@ void *ThreadTrain (void *params) // Code du thread
   mes_param = ( struct thread_param *) params ;
   mes_param->AVGgradient = e_calloc(1, sizeof(SimpleRnn));
   rnn_init_model(rnn->X, rnn->N, rnn->Y , mes_param->AVGgradient , 1);
-
   int nb_traite = 0;
   
   for (int i = mes_param->start ; i < mes_param->end; i++)

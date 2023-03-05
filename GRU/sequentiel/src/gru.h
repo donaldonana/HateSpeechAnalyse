@@ -83,7 +83,7 @@ void gru_zero_the_model(gru_rnn *model);
 
 void gradients_decend(gru_rnn* model, gru_rnn* gradients, float lr, int n);
 
-void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient,  int mini_batch_size, float lr, Data* data);
+void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa);
 
 void alloc_cache_array(gru_rnn* gru, int X, int N, int Y, int l);
 
@@ -92,6 +92,10 @@ void sum_gradients(gru_rnn* gradients, gru_rnn* gradients_entry);
 void mean_gradients(gru_rnn* gradients, double d);
 
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr);
+
+float gru_validation(gru_rnn* gru, Data* data);
+
+void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename);
 
 gru_cache*  gru_cache_container_init(int X, int N, int Y);
 
