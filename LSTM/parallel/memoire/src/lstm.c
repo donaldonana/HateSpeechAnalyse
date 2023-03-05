@@ -241,7 +241,6 @@ void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lst
 }
 
 
-
 lstm_cache*  lstm_cache_container_init(int X, int N, int Y)
 {
   int S = N + X;
@@ -428,7 +427,6 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
 
 }
 
-
 float lstm_validation(lstm_rnn* lstm, Data* data)
 {
   float Loss = 0.0, acc = 0.0;
@@ -447,7 +445,6 @@ float lstm_validation(lstm_rnn* lstm, Data* data)
   return Loss/n;
 
 }
-
 
 void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_THREADS){
 
