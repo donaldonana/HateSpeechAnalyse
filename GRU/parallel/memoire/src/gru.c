@@ -9,7 +9,7 @@ int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros)
   int S = X + N;
   gru->X = X; /**< Number of input nodes */
   gru->N = N; /**< Number of neurons in the hiden layers */
-  gru->S = S; /**< lstm_model_t.X + lstm_model_t.N */
+  gru->S = S; /**< gru_model_t.X + gru_model_t.N */
   gru->Y = Y; /**< Number of output nodes */
   gru->probs = get_zero_vector(Y);
 
@@ -23,7 +23,7 @@ int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros)
     gru->Wr = get_random_vector(N * S, S);
     gru->Wh = get_random_vector(N * S, S);
     gru->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(gru, X, N, Y, 100);
+    alloc_cache_array(gru, X, N, Y, 200);
   }
 
   gru->bz = get_zero_vector(N);
@@ -78,21 +78,19 @@ void gru_free_model(gru_rnn* gru)
 // model, input, state and cache values, &probs, whether or not to apply softmax
 void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
 {
-
   double *h_prev = model->h_prev;
   int N, S, i , n, t ;
   double  *X_one_hot, *x_r_hold;
   N = model->N;
   S = model->S;
   n = (data->xcol - 1) ;
-
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
- 
+  // Over All The Sequence
   for (t = 0; t <= n ; t++)
   {
 
@@ -100,7 +98,7 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
     X_one_hot = cache[t]->X;
     x_r_hold  = cache[t]->S;
 
-    // concat xt whit h_hold
+    // Concat h_old and xt ; [ h_old, xt ] 
     while ( i < S ) 
     {
       if ( i < N ) {
@@ -111,9 +109,11 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
       ++i;
     }
 
+    // rt = σ(Wr.qt + br)
     fully_connected_forward(cache[t]->hr, model->Wr, X_one_hot, model->br, N, S);
     sigmoid_forward(cache[t]->hr, cache[t]->hr, N);
 
+    // Concat rt⊙h_old and xt ; [ rt⊙h_old  , xt ] 
     copy_vector(x_r_hold, cache[t]->hr, N);
     vectors_multiply(x_r_hold, h_prev, N);
     i = 0 ;
@@ -126,22 +126,22 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
       }
       ++i;
     }
-    // ht = tanh(Wh.st + bh)
+    // ht = tanh(Wh.st + bh ) (ht bar)
     fully_connected_forward(cache[t]->hh, model->Wh, x_r_hold, model->bh, N, S);
     tanh_forward(cache[t]->hh, cache[t]->hh, N);
 
-    // Fully connected + sigmoid layers 
+    // zt = σ(Wz.qt + bz )
     fully_connected_forward(cache[t]->hz, model->Wz, X_one_hot, model->bz, N, S); 
     sigmoid_forward(cache[t]->hz, cache[t]->hz, N);
     
-    //h =  hz * h_old + (1-hz)*hh
+    // h = zt ⊙ ht−1 + (1 − zt ) ⊙ ht
     copy_vector(tmp, cache[t]->hz, N);
     one_minus_vector(tmp, N);
     vectors_multiply(tmp, cache[t]->hh, N);
     copy_vector(cache[t]->h, h_prev, N);
     vectors_multiply(cache[t]->h, cache[t]->hz, N);
     vectors_add(cache[t]->h, tmp, N);
-
+    // Save hprev
     copy_vector(cache[t]->h_old, h_prev, N);
     copy_vector(h_prev, cache[t]->h, N);
 
@@ -154,6 +154,7 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
 
 }
 
+
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
 void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rnn* gradients)
 {
@@ -162,18 +163,16 @@ void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rn
   double *dldh, *dldy, *dldhz,  *dldhh;  
   double *dldhr;
   int N, Y, S;
-  
   N = model->N;
   Y = model->Y;
   S = model->S;
-
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
-
+  
   double *bias = malloc(N*sizeof(double));
   double *weigth = malloc((N*S)*sizeof(double));
 
@@ -183,11 +182,9 @@ void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rn
   dldhr = model->dldhr;
   dldhh = model->dldhh;
   dldy  = model->dldy;
+  // Compute dldby , dldwy and dldh
   copy_vector(dldy, model->probs, model->Y);
-
   vectors_substract(dldy, y, model->Y);
-
-  
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
 
   for (int t = n ; t >= 0; t--)
@@ -223,7 +220,7 @@ void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rn
     vectors_add(gradients->Wh, weigth, N*S);
     vectors_add(gradients->bh, bias, N);
 
-  //   // // dldXi will work as a temporary substitute for dldX (where we get extract dh_next from!)
+    // dldXi will work as a temporary substitute for dldX (where we get extract dh_next from!)
     vectors_add(gradients->dldXz, gradients->dldXr, S);
     vectors_add(gradients->dldXz, gradients->dldXh, S);
     copy_vector(dldh, gradients->dldXz, N);
@@ -235,7 +232,6 @@ void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rn
   free_vector(&tmp);
 
 }
-
 
 
 gru_cache*  gru_cache_container_init(int X, int N, int Y)
@@ -327,28 +323,60 @@ void sum_gradients(gru_rnn* gradients, gru_rnn* gradients_entry)
   vectors_add(gradients->bh, gradients_entry->bh, gradients->N);
 }
 
-void mean_gradients(gru_rnn* gradients, double d)
+float gru_validation(gru_rnn* gru, Data* data)
 {
-  vectors_mean_multiply(gradients->Wy, d,  gradients->Y * gradients->N);
-  vectors_mean_multiply(gradients->Wr, d,  gradients->N * gradients->S);
-  vectors_mean_multiply(gradients->Wz, d,  gradients->N * gradients->S);
-  vectors_mean_multiply(gradients->Wh, d,  gradients->N * gradients->S);
-
-  vectors_mean_multiply(gradients->by, d, gradients->Y);
-  vectors_mean_multiply(gradients->br, d, gradients->N);
-  vectors_mean_multiply(gradients->bh, d, gradients->N);
-  vectors_mean_multiply(gradients->bz, d, gradients->N);
-
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_val , end = data->end_val , n = 0 ;
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    gru_forward(gru, data->X[i], gru->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], gru->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc, data->Y[i], gru->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
 
 }
- 
-void alloc_cache_array(gru_rnn* gru, int X, int N, int Y, int l){
 
-  gru->cache = malloc((l)*sizeof(gru_cache));
-  for (int t = 0; t < l; t++)
-  {
-    gru->cache[t] = gru_cache_container_init(X, N, Y);
+
+void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename)
+{
+  FILE * fp; 
+  fp = fopen(filename, "w");
+  if ( fp == NULL ) {
+    printf("Failed to open file: %s for writing.\n", filename);
+    return;
   }
+    fprintf(fp, "{");
+    fprintf(fp, "\n\t\"InputSize \": %d",   gru->X);
+    fprintf(fp, ",\n\t\"HiddenSize \": %d", gru->N);
+    fprintf(fp, ",\n\t\"OutputSize \": %d", gru->Y);
+
+    fprintf(fp, ",\n\t\"Wy\": ");
+    vector_store_as_matrix_json(gru->Wy, gru->Y, gru->N, fp);
+    fprintf(fp, ",\n\t\"Wz\": ");
+    vector_store_as_matrix_json(gru->Wz, gru->N, gru->S, fp);
+    fprintf(fp, ",\n\t\"Wr\": ");
+    vector_store_as_matrix_json(gru->Wr, gru->N, gru->S, fp);
+    fprintf(fp, ",\n\t\"Wh\": ");
+    vector_store_as_matrix_json(gru->Wh, gru->N, gru->S, fp);
+    
+    fprintf(fp, ",\n\t\"by\": ");
+    vector_store_json(gru->by, gru->Y, fp);
+    fprintf(fp, ",\n\t\"bh\": ");
+    vector_store_json(gru->bh, gru->N, fp);
+    fprintf(fp, ",\n\t\"br\": ");
+    vector_store_json(gru->br, gru->N, fp);
+    fprintf(fp, ",\n\t\"bz\": ");
+    vector_store_json(gru->bz, gru->N, fp);
+     
+    fprintf(fp, "\n}");
+
+  fclose(fp);
 
 }
 
@@ -386,3 +414,14 @@ void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr, int NUM_TH
 	printf(" Num. Threads : %d \n", NUM_THREADS);
 
 }
+
+void alloc_cache_array(gru_rnn* gru, int X, int N, int Y, int l){
+
+  gru->cache = malloc((l)*sizeof(gru_cache));
+  for (int t = 0; t < l; t++)
+  {
+    gru->cache[t] = gru_cache_container_init(X, N, Y);
+  }
+
+}
+

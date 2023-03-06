@@ -35,7 +35,6 @@
 #include <limits.h>
 
 
-
 typedef struct Data Data;
 struct Data
 {
@@ -47,14 +46,14 @@ struct Data
     int ycol;
 	int start_val;
 	int end_val;
+    int start_test;
 	int **X;
     double **Y;
     double **embedding;
 
 };
 
-void get_data(Data *data);
-
+ 
 double **allocate_dynamic_float_matrix(int row, int col);
 
 int **allocate_dynamic_int_matrix(int row, int col);
@@ -127,19 +126,26 @@ void 	vector_store_ascii(double *, int, FILE *);
 void*   e_calloc(size_t count, size_t size);
 size_t  e_alloc_total();
 
-/* uniform distribution, (0..1] */
-float drand();
 
-/* normal distribution, centered on 0, std dev 1 */
-float random_normal() ;
 
-float loss_entropy(double *y , double *y_pred, int n);
+    /* uniform distribution, (0..1] */
+    float drand();
 
-float binary_loss_entropy(double *y , double *y_pred, int n);
+    /* normal distribution, centered on 0, std dev 1 */
+    float random_normal() ;
 
-int ArgMax(double *y, int n);
+    float loss_entropy(double *y , double *y_pred, int n);
 
-float accuracy(float acc, double *y, double *y_pred, int n);
+    float binary_loss_entropy(double *y , double *y_pred, int n);
+
+    int ArgMax(double *y, int n);
+
+    float accuracy(float acc, double *y, double *y_pred, int n);
+
+
+void get_split_data(Data *data, float VALIDATION_SIZE);
+
+
 
 #endif
 

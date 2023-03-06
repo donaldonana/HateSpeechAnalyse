@@ -428,7 +428,6 @@ void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename)
 }
 
 
-
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr){
 
 	printf("\n ============= Model Summary ========== \n");

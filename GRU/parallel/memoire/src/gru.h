@@ -67,7 +67,7 @@ typedef struct gru_rnn
 
 } gru_rnn;
 
-int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros);
+int  gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros);
 
 void gru_free_model(gru_rnn *gru);
 
@@ -94,6 +94,10 @@ void mean_gradients(gru_rnn* gradients, double d);
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
 void copy_gru(gru_rnn* gru, gru_rnn* secondgru);
+
+float gru_validation(gru_rnn* gru, Data* data);
+
+void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename);
 
 gru_cache*  gru_cache_container_init(int X, int N, int Y);
 
