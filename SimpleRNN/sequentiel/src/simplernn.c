@@ -201,6 +201,27 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
 }
 
 
+float rnn_test(SimpleRnn* rnn, Data* data)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_test , end = data->xraw-1, n = 0 ;
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    rnn_forward(rnn, data->X[i], rnn->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("\n--> Test. Loss : %f || Test. Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
+
+}
+
+
+
 void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr)
 {
 	printf("\n ============= Model Summary ========== \n");

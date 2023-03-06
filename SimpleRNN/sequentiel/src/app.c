@@ -112,9 +112,17 @@ int main(int argc, char **argv)
     e = e + 1 ; 
   }
 
+  
   gettimeofday(&end_t, NULL);
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
   printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+
+  printf("\n====== Test Phase ======\n");
+  printf(" \n...\n");
+  rnn_test(rnn, data);
+  printf("\n");
+
+
   // Free section.
   rnn_free_model(rnn);
   rnn_free_model(gradient);

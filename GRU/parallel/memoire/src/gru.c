@@ -2,7 +2,6 @@
 #include "gru.h"
 
 
-
 // Inputs, Neurons, Outputs, &gru model, zeros
 int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros)
 {
@@ -341,7 +340,6 @@ float gru_validation(gru_rnn* gru, Data* data)
   return Loss/n;
 
 }
-
 
 void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename)
 {

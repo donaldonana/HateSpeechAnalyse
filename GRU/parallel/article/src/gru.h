@@ -101,6 +101,10 @@ void modelUpdate(gru_rnn *gru, gru_rnn *grad, int NUM_THREADS);
 
 void somme_gradient(gru_rnn *grad, gru_rnn *slave);
 
+float gru_validation(gru_rnn* gru, Data* data);
+
+void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename);
+
 gru_cache*  gru_cache_container_init(int X, int N, int Y);
 
 
