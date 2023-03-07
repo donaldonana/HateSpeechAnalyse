@@ -104,18 +104,16 @@ void *ThreadTrain (void *params) // Code du thread
     gru_backforward(mes_param->gru, data->Y[i], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
-
-     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
+    // Update The Local RNN 
+    if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
     {	
-      pthread_mutex_lock (&mutexRnn);
-        gradients_decend(mes_param->gru, mes_param->AVGgradient, lr, nb_traite);
-      pthread_mutex_unlock (&mutexRnn);
+      gradients_decend(mes_param->gru, mes_param->AVGgradient, lr, nb_traite);
       nb_traite = 0;
     }
 
     gru_zero_the_model(mes_param->gradient);
     set_vector_zero(gru->h_prev, gru->N);
-
+    
   }
   gru_free_model(mes_param->gradient);
   gru_free_model(mes_param->AVGgradient);
@@ -165,7 +163,7 @@ int main(int argc, char **argv)
 
       printf("\n====== Training =======\n");
 
-    n = size/NUM_THREADS;
+    gettimeofday(&start_t, NULL);
     while (e < epoch )
     {
         start = 0 ; 
@@ -232,7 +230,6 @@ int main(int argc, char **argv)
         }
         e = e + 1 ; 
     }
-
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);

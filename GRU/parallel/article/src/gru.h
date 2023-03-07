@@ -89,8 +89,6 @@ void alloc_cache_array(gru_rnn* gru, int X, int N, int Y, int l);
 
 void sum_gradients(gru_rnn* gradients, gru_rnn* gradients_entry);
 
-void mean_gradients(gru_rnn* gradients, double d);
-
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr, int NUM_THREADS);
 
 void copy_gru(gru_rnn* gru, gru_rnn* secondgru);

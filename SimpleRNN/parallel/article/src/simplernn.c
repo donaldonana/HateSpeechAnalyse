@@ -48,7 +48,8 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
   S = model->S;
   n = (data->xcol - 1) ;
   double *hprev;
-  if ( init_zero_vector(&hprev, N) ) {
+  if ( init_zero_vector(&hprev, N) ) 
+  {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
@@ -79,7 +80,7 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
   fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
   softmax_layers_forward(model->probs, model->probs, model->Y);
   
-  // Free all tempory Variable
+  // Free all temp Variable
   free_vector(&hprev);
 }
 

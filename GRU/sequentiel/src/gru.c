@@ -30,7 +30,6 @@ int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros)
   gru->br = get_zero_vector(N);
   gru->bh = get_zero_vector(N);
   gru->by = get_zero_vector(Y);
-  gru->h_prev = get_zero_vector(N);
 
   gru->dldhz = get_zero_vector(N);
   gru->dldhr = get_zero_vector(S);
@@ -58,7 +57,6 @@ void gru_free_model(gru_rnn* gru)
   free_vector(&gru->br);
   free_vector(&gru->bh);
   free_vector(&gru->by);
-  free_vector(&gru->h_prev);
 
   free_vector(&gru->dldhz);
   free_vector(&gru->dldhr);
@@ -78,18 +76,15 @@ void gru_free_model(gru_rnn* gru)
 // model, input, state and cache values, &probs, whether or not to apply softmax
 void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
 {
-  double *h_prev = model->h_prev;
-  int N, S, i , n, t ;
-  double  *X_one_hot, *x_r_hold;
-  N = model->N;
-  S = model->S;
-  n = (data->xcol - 1) ;
-  double *tmp;
-  if ( init_zero_vector(&tmp, N) ) {
+  int N = model->N, S = model->S, n = (data->xcol - 1) , i , t ;
+  double  *X_one_hot, *x_r_hold, *tmp, *h_prev;
+
+  if ( init_zero_vector(&tmp, N) + init_zero_vector(&h_prev, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
+  
   // Over All The Sequence
   for (t = 0; t <= n ; t++)
   {
@@ -151,32 +146,29 @@ void gru_forward(gru_rnn* model, int *x , gru_cache** cache, Data *data)
   softmax_layers_forward(model->probs, model->probs, model->Y);
   
   free_vector(&tmp);
+  free_vector(&h_prev);
+
 
 }
 
 //	model, y_probabilities, y_correct, the next deltas, state and cache values, &gradients, &the next deltas
-void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rnn* gradients)
+void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** caches, gru_rnn* gradients)
 {
  
-  gru_cache* cache_in = NULL;
-  double *dldh, *dldy, *dldhz,  *dldhh;  
-  double *dldhr;
-  int N, Y, S;
-  N = model->N;
-  Y = model->Y;
-  S = model->S;
-  double *tmp;
-  if ( init_zero_vector(&tmp, N) ) {
+  gru_cache* cache = NULL;
+  double *dldh, *dldy, *dldhz,  *dldhh, *dldhr; 
+  int N = model->N, Y = model->Y, S = model->S;
+  double *tmp, *bias, *weigth;
+  if ( 
+    init_zero_vector(&tmp, N) + 
+    init_zero_vector(&bias,N) +
+    init_zero_vector(&weigth, N*S)  ) 
+    {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
   }
   
-  
-
-  double *bias = malloc(N*sizeof(double));
-  double *weigth = malloc((N*S)*sizeof(double));
-
   // model cache
   dldh  = model->dldh;
   dldhz = model->dldhz;
@@ -186,38 +178,38 @@ void gru_backforward(gru_rnn* model, double *y, int n, gru_cache** cache, gru_rn
   // Compute dldby , dldwy and dldh
   copy_vector(dldy, model->probs, model->Y);
   vectors_substract(dldy, y, model->Y);
-  fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
+  fully_connected_backward(dldy, model->Wy, caches[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
 
   for (int t = n ; t >= 0; t--)
   {
-    cache_in = cache[t];
+    cache = caches[t];
  
     copy_vector(dldhz, dldh, N);
-    copy_vector(tmp, cache_in->h_old, N);
-    vectors_substract(tmp , cache_in->hh, N);
+    copy_vector(tmp, cache->h_old, N);
+    vectors_substract(tmp , cache->hh, N);
     vectors_multiply(dldhz, tmp, N);
-    sigmoid_backward(dldhz, cache_in->hz, dldhz, N);
+    sigmoid_backward(dldhz, cache->hz, dldhz, N);
 
-    copy_vector(tmp, cache_in->hz, N);
+    copy_vector(tmp, cache->hz, N);
     one_minus_vector(tmp, N);
     copy_vector(dldhh, dldh, N);
     vectors_multiply(dldhh, tmp, N);
-    tanh_backward(dldhh, cache_in->hh, dldhh, N);
+    tanh_backward(dldhh, cache->hh, dldhh, N);
 
     copy_vector(tmp, dldhh, N);
     mat_mul(dldhr, tmp, model->Wh, N, S);
-    tanh_backward(dldhr, cache_in->hh, dldhr, N);
-    sigmoid_backward(dldhr, cache_in->hr, dldhr, N);
+    tanh_backward(dldhr, cache->hh, dldhr, N);
+    sigmoid_backward(dldhr, cache->hr, dldhr, N);
 
-    fully_connected_backward(dldhz, model->Wz, cache_in->X, weigth, gradients->dldXz, bias, N, S);
+    fully_connected_backward(dldhz, model->Wz, cache->X, weigth, gradients->dldXz, bias, N, S);
     vectors_add(gradients->Wz, weigth, N*S);
     vectors_add(gradients->bz, bias, N);
 
-    fully_connected_backward(dldhr, model->Wr, cache_in->X, weigth, gradients->dldXr, bias, N, S);
+    fully_connected_backward(dldhr, model->Wr, cache->X, weigth, gradients->dldXr, bias, N, S);
     vectors_add(gradients->Wr, weigth, N*S);
     vectors_add(gradients->br, bias, N);
 
-    fully_connected_backward(dldhh, model->Wh, cache_in->S, weigth, gradients->dldXh, bias, N, S);
+    fully_connected_backward(dldhh, model->Wh, cache->S, weigth, gradients->dldXh, bias, N, S);
     vectors_add(gradients->Wh, weigth, N*S);
     vectors_add(gradients->bh, bias, N);
 
@@ -355,15 +347,15 @@ void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int min
       sum_gradients(AVGgradient, gradient);
       
       nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == 4459)
+      if (nb_traite == mini_batch_size || i == (end - 1))
       {
         // update
         gradients_decend(gru, AVGgradient, lr, nb_traite);
         nb_traite = 0 ;
       }
       gru_zero_the_model(gradient);
-      set_vector_zero(gru->h_prev, gru->N);
     }
+    
     printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
     fprintf(fl,"%d,%.6f\n", e , Loss/end);
     fprintf(fa,"%d,%.6f\n", e , acc/end);   

@@ -58,12 +58,10 @@ typedef struct gru_rnn
   double* dldXr;
   double* dldXz;
   double* dldXh;
-
   double* dldy;
 
   // gate and memory cell cache for time step
   gru_cache** cache;
-  double*  h_prev;
 
 } gru_rnn;
 
