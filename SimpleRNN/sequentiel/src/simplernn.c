@@ -90,16 +90,17 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
 void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
 {
   simple_rnn_cache* cache = NULL;
-  double *dldh, *dldy;
+  double *dldh, *dldy, *tmp, *weigth, *bias;
   int N, Y, S;
   N = model->N;
   Y = model->Y;
   S = model->S;
   // Tempory variable for gradient computation
-  double *bias = malloc(N*sizeof(double));
-  double *weigth = malloc((N*S)*sizeof(double));
-  double *tmp;
-  if ( init_zero_vector(&tmp, N) ) {
+  if ( 
+    init_zero_vector(&tmp, N) + 
+    init_zero_vector(&bias,N) +
+    init_zero_vector(&weigth, N*S)  ) 
+  {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
@@ -201,16 +202,19 @@ float rnn_validation(SimpleRnn* rnn, Data* data)
 }
 
 
-float rnn_test(SimpleRnn* rnn, Data* data)
+float rnn_test(SimpleRnn* rnn, Data* data, FILE* ft)
 {
   float Loss = 0.0, acc = 0.0;
   int start = data->start_test , end = data->xraw-1, n = 0 ;
+  fprintf(ft,"y,ypred\n");
   for (int i = start; i <= end; i++)
   {
     // Forward
     rnn_forward(rnn, data->X[i], rnn->cache, data);
     // Compute loss
     Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+    ArgMax(data->Y[i], data->ycol );
+    fprintf(ft,"%d,%d\n", ArgMax(data->Y[i], data->ycol) , ArgMax(rnn->probs, data->ycol ));
     // Compute accuracy
     acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
     n = n + 1 ;
@@ -219,7 +223,6 @@ float rnn_test(SimpleRnn* rnn, Data* data)
   return Loss/n;
 
 }
-
 
 
 void print_summary(SimpleRnn* rnn, int epoch, int mini_batch, float lr)

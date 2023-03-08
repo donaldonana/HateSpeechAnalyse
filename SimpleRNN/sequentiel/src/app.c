@@ -67,7 +67,8 @@ int main(int argc, char **argv)
 {
   FILE *fl  = fopen(LOSS_FILE_NAME, "w");
   FILE *fa  = fopen(ACC_FILE_NAME,  "w");
-  FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+  FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w"); 
+  FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
 
   Data *data  = malloc(sizeof(Data));
   double totaltime;
@@ -119,7 +120,7 @@ int main(int argc, char **argv)
 
   printf("\n====== Test Phase ======\n");
   printf(" \n...\n");
-  rnn_test(rnn, data);
+  rnn_test(rnn, data, ft);
   printf("\n");
 
 

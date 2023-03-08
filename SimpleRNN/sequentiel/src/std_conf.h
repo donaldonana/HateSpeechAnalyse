@@ -72,6 +72,7 @@
     #define LOSS_FILE_NAME                                          "loss.csv"
     #define ACC_FILE_NAME                                           "acc.csv"
     #define VAL_ACC_FILE_NAME                                       "val_acc.csv"
+    #define TEST_FILE_NAME                                          "test.csv"
     #define VAL_LOSS_FILE_NAME                                      "val_loss.csv"
     #define MODEL_FILE_NAME                                         "SimpleRnn.json"
     #define NUMBER_OF_CHARS_TO_DISPLAY_DURING_TRAINING              200

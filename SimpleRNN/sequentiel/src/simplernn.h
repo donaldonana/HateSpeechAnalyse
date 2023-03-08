@@ -80,7 +80,7 @@ void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename);
 
 float rnn_validation(SimpleRnn* rnn, Data* data);
 
-float rnn_test(SimpleRnn* rnn, Data* data);
+float rnn_test(SimpleRnn* rnn, Data* data, FILE* ft);
 
 void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache);
 

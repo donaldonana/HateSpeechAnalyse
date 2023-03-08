@@ -43,11 +43,10 @@ void rnn_free_model(SimpleRnn* rnn)
 void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data)
 {
   int N, S, i , n, t ;
-  double  *X_one_hot;
+  double  *X_one_hot, *hprev;
   N = model->N;
   S = model->S;
-  n = (data->xcol - 1) ;
-  double *hprev;
+  n = (data->xcol - 1);
   if ( init_zero_vector(&hprev, N) ) 
   {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
@@ -87,16 +86,14 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
 void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** caches, SimpleRnn* gradients)
 {
   simple_rnn_cache* cache = NULL;
-  double *dldh, *dldy;
-  int N, Y, S;
-  N = model->N;
-  Y = model->Y;
-  S = model->S;
+  double *dldh, *dldy, *tmp, *weigth, *bias;
+  int N = model->N, Y = model->Y, S = model->S;
   // Tempory variable for gradient computation
-  double *bias = malloc(N*sizeof(double));
-  double *weigth = malloc((N*S)*sizeof(double));
-  double *tmp;
-  if ( init_zero_vector(&tmp, N) ) {
+  if ( 
+    init_zero_vector(&tmp, N) + 
+    init_zero_vector(&bias,N) +
+    init_zero_vector(&weigth, N*S)  ) 
+  {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
       __FILE__, __func__, __LINE__, N);
     exit(1);
