@@ -122,7 +122,7 @@ float drand()   ;
 
 /* normal distribution, centered on 0, std dev 1 */
 float random_normal() ;
-
+double*   get_vector(int R, int C) ;
 float loss_entropy(double *y , double *y_pred, int n);
 
 float binary_loss_entropy(double *y , double *y_pred, int n);

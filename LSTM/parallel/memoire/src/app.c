@@ -71,7 +71,7 @@ void parse_input_args(int argc, char** argv)
       
     } else if ( !strcmp(argv[a], "-hiden") ) {
       HIDEN_SIZE =  atoi(argv[a + 1]);
-      if ( HIDEN_SIZE < 4 || HIDEN_SIZE > 500) {
+      if ( HIDEN_SIZE <= 2 || HIDEN_SIZE > 500) {
         // usage(argv);
         HIDEN_SIZE = 16;
       }
@@ -82,7 +82,20 @@ void parse_input_args(int argc, char** argv)
   }
 }
 
-
+void shuffle(int *array, size_t n)
+{
+    if (n > 1) 
+    {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = array[j];
+          array[j] = array[i];
+          array[i] = t;
+        }
+    }
+}
 
 void *ThreadTrain (void *params) // Code du thread
 { 
@@ -90,18 +103,28 @@ void *ThreadTrain (void *params) // Code du thread
   mes_param = ( struct thread_param *) params ;
   mes_param->AVGgradient = e_calloc(1, sizeof(lstm_rnn));
   lstm_init_model(lstm->X, lstm->N, lstm->Y , mes_param->AVGgradient , 1);
-  int nb_traite = 0;
+  int nb_traite = 0 , k = 0, j = 0, n =  (mes_param->end - mes_param->start + 1) ;
+
+  int *TrainIdx = malloc((n)*sizeof(int));
+  for (int i = mes_param->start; i < mes_param->end ; i++)
+  {
+    TrainIdx[j] = i ; 
+    j = j + 1;
+  }
+  shuffle(TrainIdx,(n-1));
+  j = 0;
    
   for (int i = mes_param->start; i < mes_param->end; i++)
   {
+    k = TrainIdx[j];
     // Forward
-    lstm_forward(mes_param->lstm, data->X[i], mes_param->lstm->cache, data);
+    lstm_forward(mes_param->lstm, data->X[k], mes_param->lstm->cache, data);
     // Compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->lstm->probs, data->ycol);
+    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[k], mes_param->lstm->probs, data->ycol);
     // Compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->lstm->probs, data->ycol);
+    mes_param->acc = accuracy(mes_param->acc , data->Y[k],  mes_param->lstm->probs, data->ycol);
     // Backforward
-    lstm_backforward(mes_param->lstm, data->Y[i], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
+    lstm_backforward(mes_param->lstm, data->Y[k], (data->xcol-1), mes_param->lstm->cache, mes_param->gradient);
     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
     nb_traite = nb_traite + 1; 
     // Update The Central LSTM
@@ -116,9 +139,11 @@ void *ThreadTrain (void *params) // Code du thread
     lstm_zero_the_model(mes_param->gradient);
     set_vector_zero(lstm->h_prev, lstm->N);
     set_vector_zero(lstm->c_prev, lstm->N);
+    j = j + 1;
   }
   lstm_free_model(mes_param->gradient);
   lstm_free_model(mes_param->AVGgradient);
+  free(TrainIdx);
   pthread_exit (NULL);
 }
 
@@ -143,7 +168,7 @@ int main(int argc, char **argv)
 
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
-    pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
+    pthread_t    *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
     pthread_attr_t attr ;
 
     /* Initialize and set thread detached attribute */

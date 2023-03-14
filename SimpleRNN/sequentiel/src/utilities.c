@@ -85,7 +85,7 @@ void  vectors_substract_scalar_multiply(double* A, double* B, int L, double s)
 {
   int l = 0;
   while ( l < L ) {
-    A[l] -= B[l]*s*0.5;
+    A[l] -= B[l]*s;
     ++l;
   }
 }
@@ -144,6 +144,29 @@ double*   get_random_vector(int L, int R) {
     ++l;
   }
 
+  return p;
+
+}
+
+double*   get_vector(int R, int C) {
+
+  FILE *file = NULL;
+  file = fopen("../../data/vec.txt" , "r");
+  int l = 0;
+  double *p, a;
+  p = e_calloc(R*C, sizeof(double));
+
+  for (int i = 0; i < R; i++)
+	{
+		for (int j = 0; j < C; j++)
+		{
+			if(fscanf(file, "%lf" , &a)){
+			p[l] = a;
+			}
+      l = l + 1;
+		}
+			
+	}
   return p;
 
 }
@@ -879,13 +902,13 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
 
   if (VALIDATION_SIZE == 0)
   {
-	  data->start_test = data->xraw * 0.7 ;
+	  data->start_test = data->xraw * 0.8 ;
     data->start_val = data->start_test;
     data->end_val   = data->xraw - 1;
   }
   else
   {
-	  data->start_val = data->xraw * 0.7 ;
+	  data->start_val = data->xraw * 0.8 ;
 	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
     data->start_test = data->end_val + 1 ;
   }

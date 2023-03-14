@@ -98,6 +98,8 @@ double** 	get_zero_matrix(int, int);
 double** 	get_random_matrix(int, int);
 double* 	get_random_vector(int,int);
 
+double*   get_vector(int R, int C);
+
 void  set_vector_zero(double* A, int N);
 void 	matrix_set_to_zero(double**, int, int);
 void 	vector_set_to_zero(double*, int);

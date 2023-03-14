@@ -198,7 +198,7 @@ int main(int argc, char **argv)
         Loss = Loss + threads_params[t].loss ;
         Acc = Acc + threads_params[t].acc ;
       }
-      printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
+      printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/(size+1), Acc/(size+1)); 
       fprintf(fl,"%d,%.6f\n", e+1 , Loss/size);
       fprintf(fa,"%d,%.6f\n", e+1 , Acc/size);
       /* Validation Phase And Early Stoping */

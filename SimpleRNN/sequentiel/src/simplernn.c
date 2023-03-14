@@ -13,8 +13,8 @@ int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
     rnn->Wh = get_zero_vector(N * S);
     rnn->Wy = get_zero_vector(Y * N);
   } else {
-    rnn->Wh = get_random_vector(N * S, S);
-    rnn->Wy = get_random_vector(Y * N, N);
+    rnn->Wh = get_vector(N * S, S);
+    rnn->Wy = get_vector(Y * N, N);
     alloc_cache_array(rnn, X, N, Y, 200);
   }
   rnn->bh = get_zero_vector(N);
@@ -77,6 +77,8 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
     copy_vector(cache[t]->h_old, hprev, N);
     copy_vector(hprev, cache[t]->h, N);
 
+    copy_vector(cache[t]->X, X_one_hot, S);
+
   }
   // probs = softmax ( Wy*h + by )
   fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
@@ -84,6 +86,7 @@ void rnn_forward(SimpleRnn* model, int *x , simple_rnn_cache** cache, Data *data
   
   // Free all tempory Variable
   free_vector(&hprev);
+    
 }
 
 
@@ -130,14 +133,6 @@ void rnn_backforward(SimpleRnn* model, double *y, int n, simple_rnn_cache** cach
 }
 
 
-void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
-{
-  free_vector(&(cache_to_be_freed)->h);
-  free_vector(&(cache_to_be_freed)->h_old);
-  free_vector(&(cache_to_be_freed)->X);
-}
-
-
 // A = A - alpha * m, m = momentum * m + ( 1 - momentum ) * dldA
 void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n) 
 {
@@ -149,37 +144,6 @@ void gradients_decend(SimpleRnn* model, SimpleRnn* gradients, float lr, int n)
   vectors_substract_scalar_multiply(model->bh, gradients->bh, model->N, LR);
 }
 
-
-void rnn_training(SimpleRnn* rnn, SimpleRnn* gradient, SimpleRnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa)
-{
-  float Loss = 0.0, acc = 0.0;
-  int end = data->start_val - 1, nb_traite = 0 ; 
-  for (int i = 0; i <= end; i++)
-  {
-    // Forward
-    rnn_forward(rnn, data->X[i], rnn->cache, data);
-    // Compute loss
-    Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
-    // Compute accuracy
-    acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
-    // Backforward
-    rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
-    sum_gradients(AVGgradient, gradient);
-    // Updating
-    nb_traite = nb_traite + 1 ;
-    if (nb_traite == mini_batch_size || i == end)
-    {
-      gradients_decend(rnn, AVGgradient, lr, nb_traite);
-      rnn_zero_the_model(AVGgradient);
-      nb_traite = 0 ;
-    }
-    rnn_zero_the_model(gradient);
-  }
-  printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
-  fprintf(fl,"%d,%.6f\n", e , Loss/end);
-  fprintf(fa,"%d,%.6f\n", e , acc/end);
-
-}
 
 
 float rnn_validation(SimpleRnn* rnn, Data* data)
@@ -307,4 +271,11 @@ void rnn_cache_container_init(int X, int N, int Y, simple_rnn_cache* cache )
   cache->X = get_zero_vector(S);
 }
 
+
+void rnn_cache_container_free(simple_rnn_cache* cache_to_be_freed)
+{
+  free_vector(&(cache_to_be_freed)->h);
+  free_vector(&(cache_to_be_freed)->h_old);
+  free_vector(&(cache_to_be_freed)->X);
+}
 

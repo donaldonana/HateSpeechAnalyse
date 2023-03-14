@@ -65,19 +65,21 @@ void parse_input_args(int argc, char** argv)
 
 int main(int argc, char **argv)
 {
+  srand( time ( NULL ) );
+  
   FILE *fl  = fopen(LOSS_FILE_NAME, "w");
   FILE *fa  = fopen(ACC_FILE_NAME,  "w");
   FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w"); 
   FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
-
   Data *data  = malloc(sizeof(Data));
+
   double totaltime;
-  float val_loss, best_loss = 100 ;
-  int X, Y, N, stop = 0, e = 0 ; 
-  lr = 0.01; MINI_BATCH_SIZE = 16; epoch = 10 ; HIDEN_SIZE = 64 ;
+  float val_loss, Loss = 0.0, acc = 0.0, best_loss = 100 ;
+  int X, Y, N, end, stop = 0, e = 0 ,nb_traite = 0 ;  
+  lr = 0.1; MINI_BATCH_SIZE = 16; epoch = 10 ; HIDEN_SIZE = 64 ;
   parse_input_args(argc, argv);
   get_split_data(data, VALIDATION_SIZE);
-  Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ;
+  Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ; end = data->start_val-1;
   
   SimpleRnn* rnn = e_calloc(1, sizeof(SimpleRnn));
   SimpleRnn* gradient = e_calloc(1, sizeof(SimpleRnn));
@@ -91,15 +93,41 @@ int main(int argc, char **argv)
     
   gettimeofday(&start_t, NULL);
 
+  // Training
+
   while (e < epoch && stop < 4)
   {
+
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-    // Training 
-    rnn_training(rnn, gradient, AVGgradient, MINI_BATCH_SIZE, lr, data, e+1, fl , fa);
+    Loss = 0.0, acc = 0.0;
+    for (int i = 0; i <= end; i++)
+    {
+      // Forward
+      rnn_forward(rnn, data->X[i], rnn->cache, data);
+      // Compute loss
+      Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+      // Compute accuracy
+      acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+      // Backforward
+      rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
+      sum_gradients(AVGgradient, gradient);
+      // Updating
+      nb_traite = nb_traite + 1 ;
+      if (nb_traite == MINI_BATCH_SIZE || i == end)
+      {
+        gradients_decend(rnn, AVGgradient, lr, nb_traite);
+        rnn_zero_the_model(AVGgradient);
+        nb_traite = 0 ;
+      }
+      rnn_zero_the_model(gradient);
+    }
+    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/(end+1), acc/(end+1));  
+    fprintf(fl,"%d,%.6f\n", e , Loss/(end+1));
+    fprintf(fa,"%d,%.6f\n", e , acc/(end+1));
     // Validation And Early Stoping
     val_loss = rnn_validation(rnn, data);
     fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
-    if (val_loss < 0.9*best_loss)
+    if (val_loss < best_loss)
     {
       printf("\nsave");
       rnn_store_net_layers_as_json(rnn, MODEL_FILE_NAME); 
@@ -111,6 +139,7 @@ int main(int argc, char **argv)
       stop = stop + 1;
     }
     e = e + 1 ; 
+
   }
 
   

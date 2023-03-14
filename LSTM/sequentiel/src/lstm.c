@@ -21,12 +21,12 @@ int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros)
     lstm->Wo = get_zero_vector(N * S);
     lstm->Wy = get_zero_vector(Y * N);
   } else {
-    lstm->Wf = get_random_vector(N * S, S);
-    lstm->Wi = get_random_vector(N * S, S);
-    lstm->Wc = get_random_vector(N * S, S);
-    lstm->Wo = get_random_vector(N * S, S);
-    lstm->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(lstm, X, N, Y, 100);
+    lstm->Wf = get_random_vector(N*S , S);
+    lstm->Wi = get_random_vector(N*S , S);
+    lstm->Wc = get_random_vector(N*S , S);
+    lstm->Wo = get_random_vector(N*S , S);
+    lstm->Wy = get_random_vector(Y*N , N);
+    alloc_cache_array(lstm, X, N, Y, 200);
   }
 
   lstm->bf = get_zero_vector(N);
@@ -93,12 +93,10 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
 
   double *h_prev = model->h_prev;
   double *c_prev = model->c_prev;
-  int N, S, i , n, t ;
   double  *X_one_hot;
-  N = model->N;
-  S = model->S;
-  n = (data->xcol - 1) ;
-
+  int N = model->N, S = model->S, n = (data->xcol - 1) , i , t ;
+  
+  
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
     fprintf(stderr, "%s.%s.%d init_zero_vector(.., %d) failed\r\n", 
@@ -120,7 +118,7 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
       } else  {
         X_one_hot[i] = data->embedding[x[t]][i-N];
       }
-      ++i;
+      i = i + 1;
     }
 
     // Fully connected + sigmoid layers 
@@ -153,11 +151,13 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
     copy_vector(c_prev, cache[t]->c, N);
     copy_vector(h_prev, cache[t]->h, N);
 
+    copy_vector(cache[t]->X, X_one_hot, S);
+
+
   }
   // probs = softmax ( Wy*h + by )
   fully_connected_forward(model->probs, model->Wy, cache[n]->h, model->by, model->Y, model->N);
   softmax_layers_forward(model->probs, model->probs, model->Y);
-  
   free_vector(&tmp);
 
 }
@@ -167,17 +167,10 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
 void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lstm_rnn* gradients)
 {
  
-  lstm_cache* cache_in = NULL;
   double *dldh, *dldy, *dldho, *dldhf, *dldhi, *dldhc, *dldc;
-  int N, Y, S;
-  
-  N = model->N;
-  Y = model->Y;
-  S = model->S;
-
+  int N = model->N, Y = model->Y, S = model->S;
   double *bias = malloc(N*sizeof(double));
   double *weigth = malloc((N*S)*sizeof(double));
-
   // model cache
   dldh  = model->dldh;
   dldc  = model->dldc;
@@ -186,8 +179,8 @@ void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lst
   dldhf = model->dldhf;
   dldhc = model->dldhc;
   dldy  = model->dldy;
-  copy_vector(dldy, model->probs, model->Y);
 
+  copy_vector(dldy, model->probs, model->Y);
   vectors_substract(dldy, y, model->Y);
   
   fully_connected_backward(dldy, model->Wy, cache[n]->h , gradients->Wy, dldh, gradients->by, Y, N);
@@ -197,34 +190,33 @@ void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lst
 
   for (int t = n ; t >= 0; t--)
   {
-    cache_in = cache[t];
 
     copy_vector(dldho, dldh, N);
-    vectors_multiply(dldho, cache_in->tanh_c_cache, N);
-    sigmoid_backward(dldho, cache_in->ho, dldho, N);
+    vectors_multiply(dldho, cache[t]->tanh_c_cache, N);
+    sigmoid_backward(dldho, cache[t]->ho, dldho, N);
 
     copy_vector(dldhf, dldc, N);
-    vectors_multiply(dldhf, cache_in->c_old, N);
-    sigmoid_backward(dldhf, cache_in->hf, dldhf, N);
+    vectors_multiply(dldhf, cache[t]->c_old, N);
+    sigmoid_backward(dldhf, cache[t]->hf, dldhf, N);
 
-    copy_vector(dldhi, cache_in->hc, N);
+    copy_vector(dldhi, cache[t]->hc, N);
     vectors_multiply(dldhi, dldc, N);
-    sigmoid_backward(dldhi, cache_in->hi, dldhi, N);
+    sigmoid_backward(dldhi, cache[t]->hi, dldhi, N);
 
-    copy_vector(dldhc, cache_in->hi, N);
+    copy_vector(dldhc, cache[t]->hi, N);
     vectors_multiply(dldhc, dldc, N);
-    tanh_backward(dldhc, cache_in->hc, dldhc, N);
+    tanh_backward(dldhc, cache[t]->hc, dldhc, N);
 
-    fully_connected_backward(dldhi, model->Wi, cache_in->X, weigth, gradients->dldXi, bias, N, S);
+    fully_connected_backward(dldhi, model->Wi, cache[t]->X, weigth, gradients->dldXi, bias, N, S);
     vectors_add(gradients->Wi, weigth, N*S);
     vectors_add(gradients->bi, bias, N);
-    fully_connected_backward(dldhc, model->Wc, cache_in->X, weigth, gradients->dldXc, bias, N, S);
+    fully_connected_backward(dldhc, model->Wc, cache[t]->X, weigth, gradients->dldXc, bias, N, S);
     vectors_add(gradients->Wc, weigth, N*S);
     vectors_add(gradients->bc, bias, N);
-    fully_connected_backward(dldho, model->Wo, cache_in->X, weigth, gradients->dldXo, bias, N, S);
+    fully_connected_backward(dldho, model->Wo, cache[t]->X, weigth, gradients->dldXo, bias, N, S);
     vectors_add(gradients->Wo, weigth, N*S);
     vectors_add(gradients->bo, bias, N);
-    fully_connected_backward(dldhf, model->Wf, cache_in->X, weigth, gradients->dldXf, bias, N, S);
+    fully_connected_backward(dldhf, model->Wf, cache[t]->X, weigth, gradients->dldXf, bias, N, S);
     vectors_add(gradients->Wf, weigth, N*S);
     vectors_add(gradients->bf, bias, N);
 
@@ -233,7 +225,7 @@ void lstm_backforward(lstm_rnn* model, double *y, int n, lstm_cache** cache, lst
     vectors_add(gradients->dldXi, gradients->dldXo, S);
     vectors_add(gradients->dldXi, gradients->dldXf, S);
     copy_vector(dldh, gradients->dldXi, N);
-    vectors_multiply(dldc, cache_in->hf, N);
+    vectors_multiply(dldc, cache[t]->hf, N);
 
   }
    
@@ -387,13 +379,11 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, in
       set_vector_zero(lstm->c_prev, lstm->N);
     }
     
-    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
-    fprintf(fl,"%d,%.6f\n", e , Loss/end);
-    fprintf(fa,"%d,%.6f\n", e , acc/end);
+    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/(end+1), acc/(end+1));  
+    fprintf(fl,"%d,%.6f\n", e , Loss/(end+1));
+    fprintf(fa,"%d,%.6f\n", e , acc/(end+1));
 
 }
-
-
 
 float lstm_validation(lstm_rnn* lstm, Data* data)
 {
@@ -404,9 +394,9 @@ float lstm_validation(lstm_rnn* lstm, Data* data)
     // Forward
     lstm_forward(lstm, data->X[i], lstm->cache, data);
     // Compute loss
-    Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
+    Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol) ;
     // Compute accuracy
-    acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol);
+    acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol) ;
     n = n + 1 ;
   }
   printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  

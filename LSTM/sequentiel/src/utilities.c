@@ -141,7 +141,8 @@ double*   get_random_vector(int L, int R) {
   p = e_calloc(L, sizeof(double));
 
   while ( l < L ) {
-    p[l] = random_normal()/10;
+    // p[l] = randn(0,1) / sqrt( R / 5 );
+    p[l] = random_normal()/10; 
     ++l;
   }
 
@@ -742,8 +743,8 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
 
     for (i = 0; i < row; ++i)
     {
-        free(matrix[i]);
-		matrix[i] = NULL;
+      free(matrix[i]);
+		  matrix[i] = NULL;
     }
     free(matrix);
 
@@ -771,7 +772,30 @@ float accuracy(float acc, double *y, double *y_pred, int n)
 	{
 		acc = acc + 1 ;
 	}
-	return acc;
+	return (acc);
+}
+
+double*   get_vector(int R, int C) {
+
+  FILE *file = NULL;
+  file = fopen("../../data/vec.txt" , "r");
+  int l = 0;
+  double *p, a;
+  p = e_calloc(R*C, sizeof(double));
+
+  for (int i = 0; i < R; i++)
+	{
+		for (int j = 0; j < C; j++)
+		{
+			if(fscanf(file, "%lf" , &a)){
+			p[l] = a;
+			}
+      l = l + 1;
+		}
+			
+	}
+  return p;
+
 }
 
 int ArgMax(double *y, int n)
@@ -865,7 +889,7 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
 		}
   }
 	// Y matrix
-	if (fin != NULL)
+	if (stream != NULL)
   {
 		for ( int i = 0; i < data->yraw; i++)
 		{
@@ -881,13 +905,13 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
 
   if (VALIDATION_SIZE == 0)
   {
-	  data->start_test = data->xraw * 0.7 ;
+	  data->start_test = data->xraw * 0.8;
     data->start_val = data->start_test;
     data->end_val   = data->xraw - 1;
   }
   else
   {
-	  data->start_val = data->xraw * 0.7 ;
+	  data->start_val = data->xraw * 0.8;
 	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
     data->start_test = data->end_val + 1 ;
   }
