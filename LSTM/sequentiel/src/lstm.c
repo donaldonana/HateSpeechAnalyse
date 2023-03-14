@@ -55,7 +55,6 @@ int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros)
 
 void lstm_free_model(lstm_rnn* lstm)
 {
-
   free_vector(&(lstm)->probs);
   free_vector(&lstm->Wf);
   free_vector(&lstm->Wi);
@@ -82,7 +81,6 @@ void lstm_free_model(lstm_rnn* lstm)
   free_vector(&lstm->dldXo);
   free_vector(&lstm->dldXi);
   free_vector(&lstm->dldXf);
- 
 
   free(lstm);
 }
@@ -95,7 +93,6 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
   double *c_prev = model->c_prev;
   double  *X_one_hot;
   int N = model->N, S = model->S, n = (data->xcol - 1) , i , t ;
-  
   
   double *tmp;
   if ( init_zero_vector(&tmp, N) ) {
@@ -152,7 +149,6 @@ void lstm_forward(lstm_rnn* model, int *x , lstm_cache** cache, Data *data)
     copy_vector(h_prev, cache[t]->h, N);
 
     copy_vector(cache[t]->X, X_one_hot, S);
-
 
   }
   // probs = softmax ( Wy*h + by )
@@ -349,42 +345,7 @@ void mean_gradients(lstm_rnn* gradients, double d)
 
 
 }
-
-void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa)
-{
-
-    float Loss = 0.0, acc = 0.0;
-    int end = data->start_val - 1, nb_traite = 0 ;  
-    for (int i = 0; i <= end; i++)
-    {
-      // Forward
-      lstm_forward(lstm, data->X[i], lstm->cache, data);
-      // Compute Loss
-      Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
-      // Compute Accuracy
-      acc = accuracy(acc, data->Y[i] , lstm->probs, data->ycol);
-      // Backforward
-      lstm_backforward(lstm, data->Y[i], (data->xcol-1), lstm->cache, gradient);
-      sum_gradients(AVGgradient, gradient);
-      // Updating
-      nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == end)
-      {
-        gradients_decend(lstm, AVGgradient, lr, nb_traite);
-        lstm_zero_the_model(AVGgradient);
-        nb_traite = 0 ;
-      }
-      lstm_zero_the_model(gradient);
-      set_vector_zero(lstm->h_prev, lstm->N);
-      set_vector_zero(lstm->c_prev, lstm->N);
-    }
-    
-    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/(end+1), acc/(end+1));  
-    fprintf(fl,"%d,%.6f\n", e , Loss/(end+1));
-    fprintf(fa,"%d,%.6f\n", e , acc/(end+1));
-
-}
-
+ 
 float lstm_validation(lstm_rnn* lstm, Data* data)
 {
   float Loss = 0.0, acc = 0.0;
@@ -450,8 +411,6 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
   fclose(fp);
 
 }
-
-
 
 
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l){

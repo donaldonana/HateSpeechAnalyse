@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   parse_input_args(argc, argv);
   get_split_data(data, VALIDATION_SIZE);
   Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ; end = data->start_val - 1;  
-  
+  // Initialize the model
   lstm_rnn* lstm = e_calloc(1, sizeof(lstm_rnn));
   lstm_rnn* gradient = e_calloc(1, sizeof(lstm_rnn));
   lstm_rnn* AVGgradient = e_calloc(1, sizeof(lstm_rnn));
@@ -101,32 +101,15 @@ int main(int argc, char **argv)
   lstm_init_model(X, N, Y , AVGgradient , 1);
   print_summary(lstm, epoch, MINI_BATCH_SIZE, lr);
 
-
-
   int *TrainIdx = malloc((data->start_val)*sizeof(int));
   for (int i = 0; i <= end; i++)
   {
     TrainIdx[i] = i ; 
   }
-
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
 
-  // for (int i = 0; i < (X + N)*N; i++)
-  // {
-  //   printf("%lf",lstm->Wf[i]);
-  // }
-  
-    // int start = data->start_val , end = data->end_val , n = 0 ;
-    // for (int i = start; i <= end; i++)
-    // {
-    //   for (int j = 0; j < 2 ; j++)
-    //   {
-    //     printf("%lf   ", data->Y[i][j]);
-    //   }
-    //   printf("\n");
-    // }
   while (e < epoch && stop < 4)
   {
     
@@ -185,4 +168,5 @@ int main(int argc, char **argv)
   lstm_free_model(lstm);
   lstm_free_model(gradient);
   lstm_free_model(AVGgradient);
+  free(TrainIdx);
 }

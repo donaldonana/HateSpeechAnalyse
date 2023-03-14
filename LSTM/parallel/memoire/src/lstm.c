@@ -390,7 +390,6 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
     printf("Failed to open file: %s for writing.\n", filename);
     return;
   }
- 
   
     fprintf(fp, "{");
     fprintf(fp, "\n\t\"InputSize \": %d",  lstm->X);
@@ -420,7 +419,6 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
     vector_store_json(lstm->bo, lstm->N, fp);
 
     fprintf(fp, "\n}");
-
 
 
   fclose(fp);
@@ -457,7 +455,6 @@ void print_summary(lstm_rnn* lstm, int epoch, int mini_batch, float lr, int NUM_
 	printf(" Hiden Size  : %d \n", lstm->N);
 	printf(" output Size  : %d \n",lstm->Y);
 	printf(" Num. Threads : %d \n", NUM_THREADS);
-
 
 }
 
