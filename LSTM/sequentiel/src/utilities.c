@@ -670,8 +670,6 @@ size_t  e_alloc_total()
 }
 
 
-
-
 double **allocate_dynamic_float_matrix(int row, int col)
 {
     double **ret_val;
@@ -723,7 +721,6 @@ int **allocate_dynamic_int_matrix(int row, int col)
     return ret_val;
 }
 
-
 void deallocate_dynamic_float_matrix(float **matrix, int row)
 {
     int i;
@@ -749,7 +746,6 @@ void deallocate_dynamic_int_matrix(int **matrix, int row)
     free(matrix);
 
 }
-
 
 /* uniform distribution, (0..1] */
 float drand()   

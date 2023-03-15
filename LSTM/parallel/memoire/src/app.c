@@ -180,7 +180,7 @@ int main(int argc, char **argv)
     lstm_init_model(X, N, Y , lstm, 0); 
     print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
-      printf("\n====== Training =======\n");
+    printf("\n====== Training =======\n");
 
     gettimeofday(&start_t, NULL);
     while (e < epoch )

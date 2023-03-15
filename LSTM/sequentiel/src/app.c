@@ -106,10 +106,10 @@ int main(int argc, char **argv)
   {
     TrainIdx[i] = i ; 
   }
+  
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
-
   while (e < epoch && stop < 4)
   {
     
