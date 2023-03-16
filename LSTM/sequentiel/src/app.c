@@ -83,6 +83,8 @@ int main(int argc, char **argv)
   FILE *fl  = fopen(LOSS_FILE_NAME, "w");
   FILE *fa  = fopen(ACC_FILE_NAME,  "w");
   FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+  FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
+
   Data *data  = malloc(sizeof(Data));
   // Set All variable will be use
   double totaltime;
@@ -106,13 +108,12 @@ int main(int argc, char **argv)
   {
     TrainIdx[i] = i ; 
   }
-  
+
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
   while (e < epoch && stop < 4)
   {
-    
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch); 
     Loss = acc = 0.0;
     shuffle(TrainIdx, data->start_val);
@@ -164,6 +165,14 @@ int main(int argc, char **argv)
   gettimeofday(&end_t, NULL);
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
   printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+
+  
+  printf("\n====== Test Phase ======\n");
+  printf(" \n...\n");
+  lstm_test(lstm, data, ft);
+  printf("\n");
+
+
     
   lstm_free_model(lstm);
   lstm_free_model(gradient);

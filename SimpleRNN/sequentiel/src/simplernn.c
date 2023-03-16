@@ -13,8 +13,8 @@ int rnn_init_model(int X, int N, int Y, SimpleRnn* rnn, int zeros)
     rnn->Wh = get_zero_vector(N * S);
     rnn->Wy = get_zero_vector(Y * N);
   } else {
-    rnn->Wh = get_vector(N * S, S);
-    rnn->Wy = get_vector(Y * N, N);
+    rnn->Wh = get_random_vector(N * S, S);
+    rnn->Wy = get_random_vector(Y * N, N);
     alloc_cache_array(rnn, X, N, Y, 200);
   }
   rnn->bh = get_zero_vector(N);

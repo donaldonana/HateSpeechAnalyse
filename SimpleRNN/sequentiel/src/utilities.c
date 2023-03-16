@@ -148,28 +148,6 @@ double*   get_random_vector(int L, int R) {
 
 }
 
-double*   get_vector(int R, int C) {
-
-  FILE *file = NULL;
-  file = fopen("../../data/vec.txt" , "r");
-  int l = 0;
-  double *p, a;
-  p = e_calloc(R*C, sizeof(double));
-
-  for (int i = 0; i < R; i++)
-	{
-		for (int j = 0; j < C; j++)
-		{
-			if(fscanf(file, "%lf" , &a)){
-			p[l] = a;
-			}
-      l = l + 1;
-		}
-			
-	}
-  return p;
-
-}
 
 double**  get_random_matrix(int R, int C)
 {

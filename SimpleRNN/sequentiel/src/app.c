@@ -63,24 +63,40 @@ void parse_input_args(int argc, char** argv)
 }
 
 
+void shuffle(int *array, size_t n)
+{
+    if (n > 1) 
+    {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = array[j];
+          array[j] = array[i];
+          array[i] = t;
+        }
+    }
+}
+
+
 int main(int argc, char **argv)
 {
-  srand( time ( NULL ) );
-  
+  // srand( time ( NULL ) );
+  // Define All file for save
   FILE *fl  = fopen(LOSS_FILE_NAME, "w");
   FILE *fa  = fopen(ACC_FILE_NAME,  "w");
   FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w"); 
   FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
   Data *data  = malloc(sizeof(Data));
-
+  // Set All variable will be use
   double totaltime;
   float val_loss, Loss = 0.0, acc = 0.0, best_loss = 100 ;
-  int X, Y, N, end, stop = 0, e = 0 ,nb_traite = 0 ;  
+  int X, Y, N, end, stop = 0, e = 0,  k = 0 ,nb_traite = 0 ;  
   lr = 0.1; MINI_BATCH_SIZE = 16; epoch = 10 ; HIDEN_SIZE = 64 ;
   parse_input_args(argc, argv);
   get_split_data(data, VALIDATION_SIZE);
   Y = data->ycol; X = data->ecol; N = HIDEN_SIZE ; end = data->start_val-1;
-  
+  // Initialize the model
   SimpleRnn* rnn = e_calloc(1, sizeof(SimpleRnn));
   SimpleRnn* gradient = e_calloc(1, sizeof(SimpleRnn));
   SimpleRnn* AVGgradient = e_calloc(1, sizeof(SimpleRnn));
@@ -89,27 +105,34 @@ int main(int argc, char **argv)
   rnn_init_model(X, N, Y , AVGgradient , 1);
   print_summary(rnn, epoch, MINI_BATCH_SIZE, lr);
 
-    printf("\n====== Training =======\n");
+  int *TrainIdx = malloc((data->start_val)*sizeof(int));
+  for (int i = 0; i <= end; i++)
+  {
+    TrainIdx[i] = i ; 
+  }
+
+  printf("\n====== Training =======\n");
     
   gettimeofday(&start_t, NULL);
 
-  // Training
-
-  while (e < epoch && stop < 4)
+  while (e < epoch && stop < 3)
   {
 
-    printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
-    Loss = 0.0, acc = 0.0;
+    printf("\nStart of epoch %d/%d \n", (e+1) , epoch); 
+    Loss = acc = 0.0;
+    shuffle(TrainIdx, data->start_val);
+    // Training 
     for (int i = 0; i <= end; i++)
     {
+      k = TrainIdx[i];
       // Forward
-      rnn_forward(rnn, data->X[i], rnn->cache, data);
+      rnn_forward(rnn, data->X[k], rnn->cache, data);
       // Compute loss
-      Loss = Loss + loss_entropy(data->Y[i], rnn->probs, data->ycol);
+      Loss = Loss + loss_entropy(data->Y[k], rnn->probs, data->ycol);
       // Compute accuracy
-      acc = accuracy(acc , data->Y[i], rnn->probs, data->ycol);
+      acc = accuracy(acc , data->Y[k], rnn->probs, data->ycol);
       // Backforward
-      rnn_backforward(rnn, data->Y[i], (data->xcol-1), rnn->cache, gradient);
+      rnn_backforward(rnn, data->Y[k], (data->xcol-1), rnn->cache, gradient);
       sum_gradients(AVGgradient, gradient);
       // Updating
       nb_traite = nb_traite + 1 ;

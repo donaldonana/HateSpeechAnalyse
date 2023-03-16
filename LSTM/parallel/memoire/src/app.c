@@ -233,7 +233,7 @@ int main(int argc, char **argv)
       /* Validation Phase And Early Stoping */
       val_loss = lstm_validation(lstm, data);
       fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
-      if (val_loss < 0.9*best_loss)
+      if (val_loss < best_loss)
       {
         printf("\nsave");
         lstm_store_net_layers_as_json(lstm, MODEL_FILE_NAME); 

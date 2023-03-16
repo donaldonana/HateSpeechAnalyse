@@ -366,6 +366,30 @@ float lstm_validation(lstm_rnn* lstm, Data* data)
 }
 
 
+float lstm_test(lstm_rnn* lstm, Data* data, FILE* ft)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_test , end = data->xraw-1, n = 0 ;
+  fprintf(ft,"y,ypred\n");
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    lstm_forward(lstm, data->X[i], lstm->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
+    ArgMax(data->Y[i], data->ycol );
+    fprintf(ft,"%d,%d\n", ArgMax(data->Y[i], data->ycol) , ArgMax(lstm->probs, data->ycol ));
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("\n--> Test. Loss : %f || Test. Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
+
+}
+
+
+
 void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
 {
   FILE * fp;

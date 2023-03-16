@@ -97,6 +97,8 @@ void lstm_training(lstm_rnn* lstm, lstm_rnn* gradient, lstm_rnn* AVGgradient,  i
 
 void alloc_cache_array(lstm_rnn* lstm, int X, int N, int Y, int l);
 
+float lstm_test(lstm_rnn* lstm, Data* data, FILE* ft);
+
 void sum_gradients(lstm_rnn* gradients, lstm_rnn* gradients_entry);
 
 float lstm_validation(lstm_rnn* lstm, Data* data);
