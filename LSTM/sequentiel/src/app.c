@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
-  while (e < epoch && stop < 4)
+  while (e < epoch && stop < 3)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch); 
     Loss = acc = 0.0;
@@ -143,11 +143,11 @@ int main(int argc, char **argv)
       set_vector_zero(lstm->c_prev, lstm->N);
     }
     printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/(end+1), acc/(end+1));  
-    fprintf(fl,"%d,%.6f\n", e , Loss/(end+1));
-    fprintf(fa,"%d,%.6f\n", e , acc/(end+1));
+    fprintf(fl,"%d,%.3f\n", e , Loss/(end+1));
+    fprintf(fa,"%d,%.3f\n", e , acc/(end+1));
     // Validation And Early Stoping
     val_loss = lstm_validation(lstm, data);
-    fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
+    fprintf(fv,"%d,%.3f\n", e+1 , val_loss);
     if (val_loss < best_loss)
     {
       printf("\nsave");

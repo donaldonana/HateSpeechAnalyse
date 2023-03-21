@@ -330,38 +330,6 @@ void mean_gradients(gru_rnn* gradients, double d)
 
 }
 
-void gru_training(gru_rnn* gru, gru_rnn* gradient, gru_rnn* AVGgradient, int mini_batch_size, float lr, Data* data, int e, FILE* fl, FILE* fa)
-{
-    float Loss = 0.0, acc = 0.0;
-    int end = data->start_val - 1, nb_traite = 0 ; 
-    for (int i = 0; i <= end; i++)
-    {
-      // Forward
-      gru_forward(gru, data->X[i], gru->cache, data);
-      // Compute loss
-      Loss = Loss + loss_entropy(data->Y[i], gru->probs, data->ycol);
-      // Compute accuracy
-      acc = accuracy(acc, data->Y[i], gru->probs, data->ycol);
-      // Backforward
-      gru_backforward(gru, data->Y[i], (data->xcol-1), gru->cache, gradient);
-      sum_gradients(AVGgradient, gradient);
-      
-      nb_traite = nb_traite + 1 ;
-      if (nb_traite == mini_batch_size || i == (end - 1))
-      {
-        // update
-        gradients_decend(gru, AVGgradient, lr, nb_traite);
-        nb_traite = 0 ;
-      }
-      gru_zero_the_model(gradient);
-    }
-    
-    printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/end, acc/end);  
-    fprintf(fl,"%d,%.6f\n", e , Loss/end);
-    fprintf(fa,"%d,%.6f\n", e , acc/end);   
-
-}
-
 float gru_validation(gru_rnn* gru, Data* data)
 {
   float Loss = 0.0, acc = 0.0;
