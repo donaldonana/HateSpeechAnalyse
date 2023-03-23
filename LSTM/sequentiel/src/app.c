@@ -166,14 +166,11 @@ int main(int argc, char **argv)
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
   printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
 
-  
   printf("\n====== Test Phase ======\n");
   printf(" \n...\n");
   lstm_test(lstm, data, ft);
   printf("\n");
 
-
-    
   lstm_free_model(lstm);
   lstm_free_model(gradient);
   lstm_free_model(AVGgradient);

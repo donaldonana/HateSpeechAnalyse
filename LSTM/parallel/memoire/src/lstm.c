@@ -26,7 +26,7 @@ int lstm_init_model(int X, int N, int Y, lstm_rnn* lstm, int zeros)
     lstm->Wc = get_random_vector(N * S, S);
     lstm->Wo = get_random_vector(N * S, S);
     lstm->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(lstm, X, N, Y, 100);
+    alloc_cache_array(lstm, X, N, Y, 200);
   }
 
   lstm->bf = get_zero_vector(N);

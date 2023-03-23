@@ -185,6 +185,8 @@ int main(int argc, char **argv)
     gettimeofday(&start_t, NULL);
     while (e < epoch )
     {
+    	    srand(time(NULL));
+
       start = 0 ; 
       end = n ;
       Loss = Acc = 0.0 ;
