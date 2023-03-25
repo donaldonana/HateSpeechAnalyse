@@ -248,8 +248,9 @@ int main(int argc, char **argv)
       {
         stop = stop + 1;
       }
+      
       e = e + 1 ;   
-          
+
     }
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;

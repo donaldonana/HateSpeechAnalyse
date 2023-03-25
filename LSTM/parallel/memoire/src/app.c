@@ -149,7 +149,7 @@ void *ThreadTrain (void *params) // Code du thread
 
 int main(int argc, char **argv)
 {
-    // srand(time(NULL));
+    srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     FILE *fl  = fopen(LOSS_FILE_NAME, "w");
     FILE *fa  = fopen(ACC_FILE_NAME,  "w");
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     gettimeofday(&start_t, NULL);
     while (e < epoch )
     {
-    	    srand(time(NULL));
+    	srand(time(NULL));
 
       start = 0 ; 
       end = n ;
@@ -203,7 +203,6 @@ int main(int argc, char **argv)
         threads_params[i].acc = 0.0;
         threads_params[i].start = start;
         threads_params[i].end = end;
-
         r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
         if (r) {
             printf("ERROR; pthread_create() return code : %d\n", r);
