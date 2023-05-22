@@ -425,7 +425,7 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename)
 
 }
 
-float lstm_test(lstm_rnn* lstm, Data* data, FILE* ft)
+float lstm_test(lstm_rnn* lstm, Data* data, int execution, int thread, FILE* ft)
 {
   float Loss = 0.0, acc = 0.0;
   int start = data->start_test , end = data->xraw-1, n = 0 ;
@@ -437,7 +437,7 @@ float lstm_test(lstm_rnn* lstm, Data* data, FILE* ft)
     // Compute loss
     Loss = Loss + loss_entropy(data->Y[i], lstm->probs, data->ycol);
     ArgMax(data->Y[i], data->ycol );
-    fprintf(ft,"%d,%d\n", ArgMax(data->Y[i], data->ycol) , ArgMax(lstm->probs, data->ycol ));
+    fprintf(ft,"%d,%d,%d,%d\n", execution, thread, ArgMax(data->Y[i], data->ycol) , ArgMax(lstm->probs, data->ycol ));
     // Compute accuracy
     acc = accuracy(acc , data->Y[i], lstm->probs, data->ycol);
     n = n + 1 ;

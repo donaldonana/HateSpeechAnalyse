@@ -110,7 +110,7 @@ void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char *filename);
 
 float lstm_validation(lstm_rnn* lstm, Data* data);
 
-float lstm_test(lstm_rnn* lstm, Data* data, FILE* ft);
+float lstm_test(lstm_rnn* lstm, Data* data, int execution, int thread, FILE* ft);
 
 lstm_cache*  lstm_cache_container_init(int X, int N, int Y);
 

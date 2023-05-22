@@ -16,7 +16,7 @@ pthread_mutex_t mutexRnn;
 lstm_rnn *lstm;
 Data *data ;
 float lr , VALIDATION_SIZE ;
-int epoch, MINI_BATCH_SIZE, NUM_THREADS , HIDEN_SIZE;
+int epoch, MINI_BATCH_SIZE , HIDEN_SIZE, EXECUTION = 1, NUM_THREADS = 1;
 
 pthread_mutex_t mutexRnn;
 
@@ -49,7 +49,7 @@ void parse_input_args(int argc, char** argv)
       }
     } else if ( !strcmp(argv[a], "-thread") ) {
       NUM_THREADS = atoi(argv[a + 1]);
-      if ( NUM_THREADS <= 0 ) {
+      if ( NUM_THREADS < 1 ) {
         NUM_THREADS = 1;
       }
     } else if ( !strcmp(argv[a], "-epoch") ) {
@@ -74,6 +74,13 @@ void parse_input_args(int argc, char** argv)
       if ( HIDEN_SIZE <= 2 || HIDEN_SIZE > 500) {
         // usage(argv);
         HIDEN_SIZE = 16;
+      }
+      
+    } else if ( !strcmp(argv[a], "-execution") ) {
+      EXECUTION =  atoi(argv[a + 1]);
+      if ( EXECUTION < 1) {
+        // usage(argv);
+        EXECUTION = 1;
       }
       
     }
@@ -150,12 +157,14 @@ void *ThreadTrain (void *params) // Code du thread
 
 int main(int argc, char **argv)
 {
-    srand(time(NULL));
+    // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    FILE *fl  = fopen(LOSS_FILE_NAME, "w");
-    FILE *fa  = fopen(ACC_FILE_NAME,  "w");
-    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
-    FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
+    FILE *fl  = fopen(LOSS_FILE_NAME, "a");
+    FILE *fa  = fopen(ACC_FILE_NAME,  "a");
+    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "a");
+    FILE *ft  = fopen(TEST_FILE_NAME,  "a");
+    FILE *ftime  = fopen(TIME_FILE_NAME,  "a"); 
+
     data = malloc(sizeof(Data));
     double totaltime;
     void *status;
@@ -167,6 +176,9 @@ int main(int argc, char **argv)
     parse_input_args(argc, argv);
     get_split_data(data, VALIDATION_SIZE);
     size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; N = HIDEN_SIZE; n = size/NUM_THREADS; 
+    lstm_rnn *lstm_copy;
+    lstm_copy = e_calloc(1, sizeof(lstm_rnn));
+    lstm_init_model(X, N, Y , lstm_copy, 0); 
 
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
@@ -180,6 +192,7 @@ int main(int argc, char **argv)
     /* Initialize central Model */
     lstm = e_calloc(1, sizeof(lstm_rnn));
     lstm_init_model(X, N, Y , lstm, 0); 
+    
     print_summary(lstm, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
     printf("\n====== Training =======\n");
@@ -187,7 +200,6 @@ int main(int argc, char **argv)
     gettimeofday(&start_t, NULL);
     while (e < epoch )
     {
-      
       start = 0 ; 
       end = n ;
       Loss = Acc = 0.0 ;
@@ -230,15 +242,16 @@ int main(int argc, char **argv)
         Acc  = Acc + threads_params[t].acc ;
       }
       printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
-      fprintf(fl,"%d,%d,%.6f\n", NUM_THREADS, e+1 , Loss/size);
-      fprintf(fa,"%d,%d,%.6f\n", NUM_THREADS, e+1 , Acc/size);
+      fprintf(fl,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Loss/size);
+      fprintf(fa,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Acc/size);
       /* Validation Phase And Early Stoping */
       val_loss = lstm_validation(lstm, data);
-      fprintf(fv,"%d,%d,%.6f\n", NUM_THREADS, e+1 , val_loss);
+      fprintf(fv,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , val_loss);
       if (val_loss < best_loss)
       {
         printf("\nsave");
-        lstm_store_net_layers_as_json(lstm, MODEL_FILE_NAME); 
+        copy_lstm(lstm, lstm_copy);
+        // lstm_store_net_layers_as_json(lstm, MODEL_FILE_NAME); 
         stop = 0;
         best_loss = val_loss;
       }
@@ -252,14 +265,18 @@ int main(int argc, char **argv)
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+    fprintf(ftime,"%d,%d,%.2f\n", EXECUTION, NUM_THREADS , totaltime);
+
     pthread_mutex_destroy(&mutexRnn);
     
     printf("\n====== Test Phase ======\n");
     printf(" \n...\n");
-    lstm_test(lstm, data, ft);
+    lstm_test(lstm_copy, data, EXECUTION, NUM_THREADS, ft);
+    lstm_store_net_layers_as_json(lstm_copy, MODEL_FILE_NAME); 
     printf("\n");
 
     lstm_free_model(lstm);
+    lstm_free_model(lstm_copy);
     free(threads);
     free(threads_params);
     pthread_exit(NULL);;
