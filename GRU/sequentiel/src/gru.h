@@ -95,6 +95,8 @@ float gru_validation(gru_rnn* gru, Data* data);
 
 void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename);
 
+float gru_test(gru_rnn* gru, Data* data, FILE* ft);
+
 gru_cache*  gru_cache_container_init(int X, int N, int Y);
 
 

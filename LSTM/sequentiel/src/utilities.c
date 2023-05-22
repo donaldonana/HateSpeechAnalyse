@@ -763,12 +763,13 @@ float accuracy(float acc, double *y, double *y_pred, int n)
 {
 	int idx1 = ArgMax(y_pred, n);
 	int idx2 = ArgMax(y, n);
+  float val = acc;
 
 	if (idx1 == idx2)
 	{
-		acc = acc + 1 ;
+		val = val + 1 ;
 	}
-	return (acc);
+	return val;
 }
 
 double*   get_vector(int R, int C) {
@@ -907,7 +908,7 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
   }
   else
   {
-	  data->start_val = data->xraw * 0.8;
+	  data->start_val = data->xraw * 0.7;
 	  data->end_val = data->start_val + (data->xraw*VALIDATION_SIZE - 1);
     data->start_test = data->end_val + 1 ;
   }

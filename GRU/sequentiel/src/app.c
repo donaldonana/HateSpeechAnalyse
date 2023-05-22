@@ -82,6 +82,8 @@ int main(int argc, char **argv)
   FILE *fl  = fopen(LOSS_FILE_NAME, "w");
   FILE *fa  = fopen(ACC_FILE_NAME,  "w");
   FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+  FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
+
   // FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
 
   Data *data  = malloc(sizeof(Data));
@@ -111,7 +113,7 @@ int main(int argc, char **argv)
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
-  while (e < epoch && stop < 3)
+  while (e < epoch && stop < 10)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch);
     // Training  
@@ -165,6 +167,12 @@ int main(int argc, char **argv)
   totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
   printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
   // Free section.
+  
+  printf("\n====== Test Phase ======\n");
+  printf(" \n...\n");
+  gru_test(gru, data, ft);
+  printf("\n");
+
   gru_free_model(gru);
   gru_free_model(gradient);
   gru_free_model(AVGgradient);

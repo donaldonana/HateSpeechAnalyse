@@ -115,7 +115,7 @@ int main(int argc, char **argv)
     
   gettimeofday(&start_t, NULL);
 
-  while (e < epoch && stop < 3)
+  while (e < epoch && stop < 15)
   {
 
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch); 

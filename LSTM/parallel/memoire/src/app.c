@@ -50,7 +50,7 @@ void parse_input_args(int argc, char** argv)
     } else if ( !strcmp(argv[a], "-thread") ) {
       NUM_THREADS = atoi(argv[a + 1]);
       if ( NUM_THREADS <= 0 ) {
-        // usage(argv);
+        NUM_THREADS = 1;
       }
     } else if ( !strcmp(argv[a], "-epoch") ) {
       epoch = (unsigned long) atoi(argv[a + 1]);
@@ -145,6 +145,7 @@ void *ThreadTrain (void *params) // Code du thread
   lstm_free_model(mes_param->AVGgradient);
   free(TrainIdx);
   pthread_exit (NULL);
+
 }
 
 int main(int argc, char **argv)
@@ -154,6 +155,7 @@ int main(int argc, char **argv)
     FILE *fl  = fopen(LOSS_FILE_NAME, "w");
     FILE *fa  = fopen(ACC_FILE_NAME,  "w");
     FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+    FILE *ft  = fopen(TEST_FILE_NAME,  "w"); 
     data = malloc(sizeof(Data));
     double totaltime;
     void *status;
@@ -185,8 +187,7 @@ int main(int argc, char **argv)
     gettimeofday(&start_t, NULL);
     while (e < epoch )
     {
-    	srand(time(NULL));
-
+      
       start = 0 ; 
       end = n ;
       Loss = Acc = 0.0 ;
@@ -229,11 +230,11 @@ int main(int argc, char **argv)
         Acc  = Acc + threads_params[t].acc ;
       }
       printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
-      fprintf(fl,"%d,%.6f\n", e+1 , Loss/size);
-      fprintf(fa,"%d,%.6f\n", e+1 , Acc/size);
+      fprintf(fl,"%d,%d,%.6f\n", NUM_THREADS, e+1 , Loss/size);
+      fprintf(fa,"%d,%d,%.6f\n", NUM_THREADS, e+1 , Acc/size);
       /* Validation Phase And Early Stoping */
       val_loss = lstm_validation(lstm, data);
-      fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
+      fprintf(fv,"%d,%d,%.6f\n", NUM_THREADS, e+1 , val_loss);
       if (val_loss < best_loss)
       {
         printf("\nsave");
@@ -252,10 +253,16 @@ int main(int argc, char **argv)
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
     pthread_mutex_destroy(&mutexRnn);
+    
+    printf("\n====== Test Phase ======\n");
+    printf(" \n...\n");
+    lstm_test(lstm, data, ft);
+    printf("\n");
+
     lstm_free_model(lstm);
     free(threads);
     free(threads_params);
-    pthread_exit(NULL);
+    pthread_exit(NULL);;
 
 }
 

@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   printf("\n====== Training =======\n");
 
   gettimeofday(&start_t, NULL);
-  while (e < epoch && stop < 3)
+  while (e < epoch && stop < 8)
   {
     printf("\nStart of epoch %d/%d \n", (e+1) , epoch); 
     Loss = acc = 0.0;

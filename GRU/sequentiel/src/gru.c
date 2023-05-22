@@ -388,6 +388,30 @@ void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename)
 }
 
 
+float gru_test(gru_rnn* gru, Data* data, FILE* ft)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_test , end = data->xraw-1, n = 0 ;
+  fprintf(ft,"y,ypred\n");
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    gru_forward(gru, data->X[i], gru->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], gru->probs, data->ycol);
+    ArgMax(data->Y[i], data->ycol );
+    fprintf(ft,"%d,%d\n", ArgMax(data->Y[i], data->ycol) , ArgMax(gru->probs, data->ycol ));
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], gru->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("\n--> Test. Loss : %f || Test. Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
+
+}
+
+
+
 void print_summary(gru_rnn* gru, int epoch, int mini_batch, float lr){
 
 	printf("\n ============= Model Summary ========== \n");
