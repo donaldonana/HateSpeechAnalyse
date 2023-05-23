@@ -429,7 +429,7 @@ float lstm_test(lstm_rnn* lstm, Data* data, int execution, int thread, FILE* ft)
 {
   float Loss = 0.0, acc = 0.0;
   int start = data->start_test , end = data->xraw-1, n = 0 ;
-  fprintf(ft,"y,ypred\n");
+  fprintf(ft,"execution,core,y,ypred\n");
   for (int i = start; i <= end; i++)
   {
     // Forward
