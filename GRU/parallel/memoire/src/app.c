@@ -16,7 +16,7 @@ pthread_mutex_t mutexRnn;
 gru_rnn *gru;
 Data *data ;
 float lr , VALIDATION_SIZE ;
-int epoch, MINI_BATCH_SIZE, NUM_THREADS , HIDEN_SIZE;
+int epoch, MINI_BATCH_SIZE , HIDEN_SIZE, EXECUTION = 1, NUM_THREADS = 1;
 
 typedef struct thread_param thread_param;
 struct thread_param{  
@@ -74,6 +74,12 @@ void parse_input_args(int argc, char** argv)
         HIDEN_SIZE = 16;
       }
       
+    }else if ( !strcmp(argv[a], "-execution") ) {
+      EXECUTION =  atoi(argv[a + 1]);
+      if ( EXECUTION < 1) {
+        // usage(argv);
+        EXECUTION = 1;
+      }
     }
     a += 1;
 
@@ -123,11 +129,14 @@ void *ThreadTrain (void *params) // Code du thread
 
 int main(int argc, char **argv)
 {
-    // srand(time(NULL));
+   // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    FILE *fl  = fopen(LOSS_FILE_NAME, "w");
-    FILE *fa  = fopen(ACC_FILE_NAME,  "w");
-    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+    FILE *fl  = fopen(LOSS_FILE_NAME, "a");
+    FILE *fa  = fopen(ACC_FILE_NAME,  "a");
+    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "a");
+    FILE *ft  = fopen(TEST_FILE_NAME,  "a");
+    FILE *ftime  = fopen(TIME_FILE_NAME,  "a"); 
+
     data = malloc(sizeof(Data));
     double totaltime;
     void *status;
@@ -139,6 +148,9 @@ int main(int argc, char **argv)
     parse_input_args(argc, argv);
     get_split_data(data, VALIDATION_SIZE);
     size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; N = HIDEN_SIZE; n = size/NUM_THREADS; 
+    gru_rnn *gru_copy;
+    gru_copy = e_calloc(1, sizeof(gru_rnn));
+    gru_init_model(X, N, Y , gru_copy, 0); 
 
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
@@ -180,7 +192,7 @@ int main(int argc, char **argv)
                 printf("ERROR; pthread_create() return code : %d\n", r);
                 exit(-1);
             }
-            start = end ;
+            start = end + 1 ;
             end = end + n;
             if (i == (NUM_THREADS-1) )
             {
@@ -200,16 +212,17 @@ int main(int argc, char **argv)
           Loss = Loss + threads_params[t].loss ;
           Acc  = Acc + threads_params[t].acc ;
         }
-        printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
-        fprintf(fl,"%d,%.6f\n", e+1 , Loss/size);
-        fprintf(fa,"%d,%.6f\n", e+1 , Acc/size);
+         printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
+        fprintf(fl,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Loss/size);
+        fprintf(fa,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Acc/size);
         /* Validation Phase And Early Stoping */
         val_loss = gru_validation(gru, data);
-        fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
-        if (val_loss < 0.9*best_loss)
+        fprintf(fv,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , val_loss);
+        if (val_loss < best_loss)
         {
           printf("\nsave");
-          gru_store_net_layers_as_json(gru, MODEL_FILE_NAME); 
+          // gru_store_net_layers_as_json(gru, MODEL_FILE_NAME); 
+          copy_gru(gru, gru_copy);
           stop = 0;
           best_loss = val_loss;
         }
@@ -222,8 +235,18 @@ int main(int argc, char **argv)
 
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
-    printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+    printf("\n\nTRAINING PHASE END IN %lf s\n" , totaltime);
+    
+    fprintf(ftime,"%d,%d,%.2f\n", EXECUTION, NUM_THREADS , totaltime);
+
     pthread_mutex_destroy(&mutexRnn);
+    
+    printf("\n====== Test Phase ======\n");
+    printf(" \n...\n");
+    gru_test(gru_copy, data, EXECUTION, NUM_THREADS, ft);
+    gru_store_net_layers_as_json(gru_copy, MODEL_FILE_NAME); 
+    printf("\n");
+
     gru_free_model(gru);
     free(threads);
     free(threads_params);

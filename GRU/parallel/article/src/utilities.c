@@ -907,4 +907,3 @@ void get_split_data(Data *data, float VALIDATION_SIZE)
 	fclose(file);
 	fclose(stream);
 }
-

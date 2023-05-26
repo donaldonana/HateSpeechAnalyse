@@ -16,7 +16,7 @@ pthread_mutex_t mutexRnn;
 gru_rnn *gru;
 Data *data ;
 float lr , VALIDATION_SIZE ;
-int epoch, MINI_BATCH_SIZE, NUM_THREADS , HIDEN_SIZE;
+int epoch, MINI_BATCH_SIZE , HIDEN_SIZE, EXECUTION = 1, NUM_THREADS = 1;
 
 pthread_mutex_t mutexRnn;
 
@@ -77,47 +77,79 @@ void parse_input_args(int argc, char** argv)
       }
       
     }
+    else if ( !strcmp(argv[a], "-execution") ) {
+      EXECUTION =  atoi(argv[a + 1]);
+      if ( EXECUTION < 1) {
+        // usage(argv);
+        EXECUTION = 1;
+      }
+    }
     a += 1;
 
   }
+}
+
+void shuffle(int *array, size_t n)
+{
+    if (n > 1) 
+    {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = array[j];
+          array[j] = array[i];
+          array[i] = t;
+        }
+    }
 }
 
 
 
 void *ThreadTrain (void *params) // Code du thread
 { 
-  struct thread_param *mes_param ;
-  int nb_traite = 0;
-  mes_param = ( struct thread_param *) params ;
-  mes_param->AVGgradient = e_calloc(1, sizeof(gru_rnn));
-  gru_init_model(gru->X, gru->N, gru->Y , mes_param->AVGgradient , 1);
+//   struct thread_param *mes_param ;
+//   mes_param = ( struct thread_param *) params ;
+//   mes_param->AVGgradient = e_calloc(1, sizeof(gru_rnn));
+//   gru_init_model(gru->X, gru->N, gru->Y , mes_param->AVGgradient , 1);
+//   int n =  (mes_param->end - mes_param->start + 1) , j = 0,  nb_traite = 0, k = 0;
+
+//   int *TrainIdx = malloc((n)*sizeof(int));
+//   for (int i = mes_param->start; i < mes_param->end ; i++)
+//   {
+//     TrainIdx[j] = i ; 
+//     j = j + 1;
+//   }
+//   shuffle(TrainIdx,(n-1));
+//   j = 0;
    
-  for (int i = mes_param->start; i < mes_param->end; i++)
-  {
-    // forward
-    gru_forward(mes_param->gru, data->X[i], mes_param->gru->cache, data);
-    // compute loss
-    mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[i], mes_param->gru->probs, data->ycol);
-    // compute accuracy training
-    mes_param->acc = accuracy(mes_param->acc , data->Y[i],  mes_param->gru->probs, data->ycol);
-    // backforward
-    gru_backforward(mes_param->gru, data->Y[i], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
-    sum_gradients(mes_param->AVGgradient, mes_param->gradient);
-    nb_traite = nb_traite + 1; 
-    // Update The Local RNN 
-    if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
-    {	
-      gradients_decend(mes_param->gru, mes_param->AVGgradient, lr, nb_traite);
-      nb_traite = 0;
-    }
+//   for (int i = mes_param->start; i < mes_param->end; i++)
+//   {
+//     k = TrainIdx[j];
+//     // forward
+//     gru_forward(mes_param->gru, data->X[k], mes_param->gru->cache, data);
+//     // compute loss
+//     mes_param->loss = mes_param->loss + binary_loss_entropy(data->Y[k], mes_param->gru->probs, data->ycol);
+//     // compute accuracy training
+//     mes_param->acc = accuracy(mes_param->acc , data->Y[k],  mes_param->gru->probs, data->ycol);
+//     // backforward
+//     gru_backforward(mes_param->gru, data->Y[k], (data->xcol-1), mes_param->gru->cache, mes_param->gradient);
+//     sum_gradients(mes_param->AVGgradient, mes_param->gradient);
+//     nb_traite = nb_traite + 1; 
+//     // Update The Local RNN 
+//     if(nb_traite==MINI_BATCH_SIZE || i == (mes_param->end -1))
+//     {	
+//       gradients_decend(mes_param->gru, mes_param->AVGgradient, lr, nb_traite);
+//       nb_traite = 0;
+//     }
 
-    gru_zero_the_model(mes_param->gradient);
-    set_vector_zero(gru->h_prev, gru->N);
+//     gru_zero_the_model(mes_param->gradient);
+//     set_vector_zero(gru->h_prev, gru->N);
+//     j = j + 1;
     
-  }
-  gru_free_model(mes_param->gradient);
-  gru_free_model(mes_param->AVGgradient);
-
+//   }
+//   gru_free_model(mes_param->gradient);
+//   gru_free_model(mes_param->AVGgradient);
   pthread_exit (NULL);
 }
 
@@ -125,9 +157,12 @@ int main(int argc, char **argv)
 {
     // srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
-    FILE *fl  = fopen(LOSS_FILE_NAME, "w");
-    FILE *fa  = fopen(ACC_FILE_NAME,  "w");
-    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "w");
+    FILE *fl  = fopen(LOSS_FILE_NAME, "a");
+    FILE *fa  = fopen(ACC_FILE_NAME,  "a");
+    FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "a");
+    FILE *ft  = fopen(TEST_FILE_NAME,  "a");
+    FILE *ftime  = fopen(TIME_FILE_NAME,  "a");
+
     data = malloc(sizeof(Data));
     double totaltime;
     void *status;
@@ -139,7 +174,10 @@ int main(int argc, char **argv)
     parse_input_args(argc, argv);
     get_split_data(data, VALIDATION_SIZE);
     size = (data->start_val - 1) ; X = data->ecol ; Y = data->ycol; N = HIDEN_SIZE; n = size/NUM_THREADS; 
-
+    gru_rnn *gru_copy;
+    gru_copy = e_calloc(1, sizeof(gru_rnn));
+    gru_init_model(X, N, Y , gru_copy, 0); 
+    
     /* Initialize and Set thread params */
     thread_param *threads_params = malloc(sizeof(thread_param)*NUM_THREADS);
     pthread_t *threads = malloc(sizeof(pthread_t)*NUM_THREADS);
@@ -149,15 +187,11 @@ int main(int argc, char **argv)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    /* Initialize and set thread detached attribute */
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
     /* Initialize central Model */
     gru = e_calloc(1, sizeof(gru_rnn));
     gru_init_model(X, N, Y , gru, 0); 
     gru_rnn* SumRnn = e_calloc(1, sizeof(gru_rnn));
-    gru_init_model(X, N, Y , SumRnn, 1); 
+    gru_init_model(X, N, Y , SumRnn, 0); 
 
     print_summary(gru, epoch, MINI_BATCH_SIZE, lr, NUM_THREADS);
 
@@ -173,54 +207,58 @@ int main(int argc, char **argv)
         /* Create And Start The Threads */
         for ( int i=0; i < NUM_THREADS ; i ++) 
         {
-          threads_params[i].gru = e_calloc(1, sizeof(gru_rnn));
-          gru_init_model(X, N, Y , threads_params[i].gru , 0);
-          copy_gru(gru, threads_params[i].gru);
-          threads_params[i].gradient = e_calloc(1, sizeof(gru_rnn));
-          gru_init_model(X, N, Y , threads_params[i].gradient , 1);
-          threads_params[i].loss = 0.0;
-          threads_params[i].acc = 0.0;
-          threads_params[i].start = start;
-          threads_params[i].end = end;
-          r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
-          if (r)
-          {
-            printf("ERROR; pthread_create() return code : %d\n", r);
-            exit(-1);
-          }
-          start = end ;
-          end = end + n;
-          if (i == (NUM_THREADS-1) )
-          {
-            end = end + size%NUM_THREADS ;
-          }
+          // threads_params[i].gru = e_calloc(1, sizeof(gru_rnn));
+          // gru_init_model(X, N, Y , threads_params[i].gru , 0);
+          // copy_gru(gru, threads_params[i].gru);
+          // threads_params[i].gradient = e_calloc(1, sizeof(gru_rnn));
+          // gru_init_model(X, N, Y , threads_params[i].gradient , 1);
+          // threads_params[i].loss = 0.0;
+          // threads_params[i].acc = 0.0;
+          // threads_params[i].start = start;
+          // threads_params[i].end = end;
+          // r = pthread_create (&threads[i] ,&attr ,ThreadTrain ,(void*)&threads_params[i]) ;
+          // if (r)
+          // {
+          //   printf("ERROR; pthread_create() return code : %d\n", r);
+          //   exit(-1);
+          // }
+          // start = end + 1;
+          // end = end + n;
+          // if (i == (NUM_THREADS-1) )
+          // {
+          //   end = end + size%NUM_THREADS ;
+          // }
         }
         /* Free attribute and wait for the other threads */
-        pthread_attr_destroy(&attr);
+        // pthread_attr_destroy(&attr);
         for(int t=0; t<NUM_THREADS; t++)
         {
-          r = pthread_join(threads[t], &status);
-          if (r) 
-          {
-            printf("ERROR; return code from pthread_join() is %d\n", r);
-            exit(-1);
-          }
-          somme_gradient(SumRnn, threads_params[t].gru);
-          Loss = Loss + threads_params[t].loss ;
-          Acc  = Acc + threads_params[t].acc ;
+          // r = pthread_join(threads[t], &status);
+          // if (r) 
+          // {
+          //   printf("ERROR; return code from pthread_join() is %d\n", r);
+          //   exit(-1);
+          // }
+          // somme_gradient(SumRnn, threads_params[t].gru);
+          // Loss = Loss + threads_params[t].loss ;
+          // Acc  = Acc + threads_params[t].acc ;
         }
-        printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size);  
-        fprintf(fl,"%d,%.6f\n", e+1 , Loss/size);
-        fprintf(fa,"%d,%.6f\n", e+1 , Acc/size);
         // Update The Central RNN
-        modelUpdate(gru, SumRnn, NUM_THREADS);
+        // modelUpdate(gru, SumRnn, NUM_THREADS);
+        
+        // printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size);  
+        // printf("--> Train Loss : %f || Train Accuracy : %f \n" , Loss/size, Acc/size); 
+        // fprintf(fl,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Loss/size);
+        // fprintf(fa,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , Acc/size);
+        
         /* Validation Phase And Early Stoping */
-        val_loss = gru_validation(gru, data);
-        fprintf(fv,"%d,%.6f\n", e+1 , val_loss);
-        if (val_loss < 0.9*best_loss)
+        // val_loss = gru_validation(gru, data);
+        fprintf(fv,"%d,%d,%d,%.6f\n", EXECUTION, NUM_THREADS, e+1 , val_loss);
+        if (val_loss < best_loss)
         {
           printf("\nsave");
-          gru_store_net_layers_as_json(gru, MODEL_FILE_NAME); 
+          copy_gru(gru, gru_copy);
+          // gru_store_net_layers_as_json(gru, MODEL_FILE_NAME); 
           stop = 0;
           best_loss = val_loss;
         }
@@ -233,8 +271,18 @@ int main(int argc, char **argv)
     gettimeofday(&end_t, NULL);
     totaltime = (((end_t.tv_usec - start_t.tv_usec) / 1.0e6 + end_t.tv_sec - start_t.tv_sec) * 1000) / 1000;
     printf("\nTRAINING PHASE END IN %lf s\n" , totaltime);
+    fprintf(ftime,"%d,%d,%.2f\n", EXECUTION, NUM_THREADS , totaltime);
+
     pthread_mutex_destroy(&mutexRnn);
+    
+    printf("\n====== Test Phase ======\n");
+    printf(" \n...\n");
+    gru_test(gru_copy, data, EXECUTION, NUM_THREADS, ft);
+    gru_store_net_layers_as_json(gru_copy, MODEL_FILE_NAME); 
+    printf("\n");
+
     gru_free_model(gru);
+    gru_free_model(gru_copy);
     free(threads);
     free(threads_params);
     pthread_exit(NULL);

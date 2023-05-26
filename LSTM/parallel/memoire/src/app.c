@@ -82,7 +82,6 @@ void parse_input_args(int argc, char** argv)
         // usage(argv);
         EXECUTION = 1;
       }
-      
     }
     a += 1;
 
@@ -279,7 +278,7 @@ int main(int argc, char **argv)
     lstm_free_model(lstm_copy);
     free(threads);
     free(threads_params);
-    pthread_exit(NULL);;
+    pthread_exit(NULL);
 
 }
 

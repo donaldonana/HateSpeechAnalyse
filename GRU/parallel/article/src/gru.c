@@ -249,6 +249,30 @@ float gru_validation(gru_rnn* gru, Data* data)
   }
   printf("--> Val.  Loss : %f || Val.  Accuracy : %f \n" , Loss/n, acc/n);  
   return Loss/n;
+
+}
+
+
+float gru_test(gru_rnn* gru, Data* data, int execution, int thread, FILE* ft)
+{
+  float Loss = 0.0, acc = 0.0;
+  int start = data->start_test , end = data->xraw-1, n = 0 ;
+  fprintf(ft,"execution,core,y,ypred\n");
+  for (int i = start; i <= end; i++)
+  {
+    // Forward
+    gru_forward(gru, data->X[i], gru->cache, data);
+    // Compute loss
+    Loss = Loss + loss_entropy(data->Y[i], gru->probs, data->ycol);
+    ArgMax(data->Y[i], data->ycol );
+    fprintf(ft,"%d,%d,%d,%d\n", execution, thread, ArgMax(data->Y[i], data->ycol) , ArgMax(gru->probs, data->ycol ));
+    // Compute accuracy
+    acc = accuracy(acc , data->Y[i], gru->probs, data->ycol);
+    n = n + 1 ;
+  }
+  printf("\n--> Test. Loss : %f || Test. Accuracy : %f \n" , Loss/n, acc/n);  
+  return Loss/n;
+
 }
 
 void gru_store_net_layers_as_json(gru_rnn* gru, const char * filename)
@@ -385,6 +409,7 @@ void alloc_cache_array(gru_rnn* gru, int X, int N, int Y, int l){
   }
 
 }
+
 
 
 void copy_gru(gru_rnn* gru, gru_rnn* secondgru)

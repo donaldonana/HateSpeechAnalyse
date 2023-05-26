@@ -118,5 +118,7 @@ float lstm_validation(lstm_rnn* lstm, Data* data);
 
 void lstm_store_net_layers_as_json(lstm_rnn* lstm, const char * filename);
 
+float lstm_test(lstm_rnn* lstm, Data* data, int execution, int thread, FILE* ft);
+
 
 #endif
