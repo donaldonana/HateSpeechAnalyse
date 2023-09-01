@@ -92,6 +92,8 @@ void somme_rnn(SimpleRnn *grad, SimpleRnn *slavernn);
 
 float rnn_validation(SimpleRnn* rnn, Data* data);
 
+float rnn_test(SimpleRnn* rnn, Data* data, int execution, int thread, FILE* ft);
+
 void rnn_store_net_layers_as_json(SimpleRnn* rnn, const char * filename);
 
 #endif

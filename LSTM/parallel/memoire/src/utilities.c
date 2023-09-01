@@ -138,7 +138,9 @@ double*   get_random_vector(int L, int R) {
   p = e_calloc(L, sizeof(double));
 
   while ( l < L ) {
-    p[l] = random_normal()/10;
+    p[l] =  randn(0,1) / sqrt( R );
+    // ((( (double) rand() ) / RAND_MAX) ) / sqrt( R / 2.0 );
+    // random_normal()/10;
     ++l;
   }
 

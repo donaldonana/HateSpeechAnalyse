@@ -23,7 +23,7 @@ int gru_init_model(int X, int N, int Y, gru_rnn* gru, int zeros)
     gru->Wr = get_random_vector(N * S, S);
     gru->Wh = get_random_vector(N * S, S);
     gru->Wy = get_random_vector(Y * N, N);
-    alloc_cache_array(gru, X, N, Y, 100);
+    alloc_cache_array(gru, X, N, Y, 200);
   }
 
   gru->bz = get_zero_vector(N);
@@ -251,8 +251,7 @@ float gru_validation(gru_rnn* gru, Data* data)
   return Loss/n;
 
 }
-
-
+ 
 float gru_test(gru_rnn* gru, Data* data, int execution, int thread, FILE* ft)
 {
   float Loss = 0.0, acc = 0.0;

@@ -87,7 +87,6 @@ void parse_input_args(int argc, char** argv)
 }
 
 
-
 void *ThreadTrain (void *params) // Code du thread
 { 
   struct thread_param *mes_param ;

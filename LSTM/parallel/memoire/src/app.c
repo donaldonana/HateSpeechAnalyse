@@ -156,9 +156,10 @@ void *ThreadTrain (void *params) // Code du thread
 
 int main(int argc, char **argv)
 {
-    // srand(time(NULL));
+    srand(time(NULL));
     pthread_mutex_init(&mutexRnn, NULL);
     FILE *fl  = fopen(LOSS_FILE_NAME, "a");
+    // fprintf(fl,"execution,core,epoch,loss\n");
     FILE *fa  = fopen(ACC_FILE_NAME,  "a");
     FILE *fv  = fopen(VAL_LOSS_FILE_NAME,  "a");
     FILE *ft  = fopen(TEST_FILE_NAME,  "a");
